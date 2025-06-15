@@ -7,48 +7,132 @@
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Poppins', sans-serif; margin: 0; padding: 1em; background: #f0f0f0; }
+    :root {
+      --bg: #f0f0f0;
+      --text: #333;
+      --card-bg: #fff;
+      --card-hover: #fafafa;
+      --tab-bg: #ddd;
+      --tab-active-bg: #007bff;
+      --tab-active-text: #fff;
+      --control-border: #ccc;
+      --switch-bg: #ccc;
+      --switch-knob: #fff;
+      --switch-bg-active: #007bff;
+    }
+    body.dark {
+      --bg: #222;
+      --text: #eee;
+      --card-bg: #333;
+      --card-hover: #444;
+      --tab-bg: #444;
+      --tab-active-bg: #555;
+      --tab-active-text: #fff;
+      --control-border: #555;
+      --switch-bg: #555;
+      --switch-knob: #222;
+      --switch-bg-active: #28a745;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0; padding: 1em;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
     h2 { text-align: center; margin-bottom: 0.5em; }
     .sticky-container {
-      position: sticky; top: 0; background: #f0f0f0;
+      position: sticky; top: 0; background: var(--bg);
       padding-bottom: 0.5em; z-index: 100;
     }
-    #tabs { display: flex; gap: 0.5em; justify-content: center; margin-bottom: 0.5em; flex-wrap: wrap; }
-    #tabs button {
-      padding: 0.6em 1.2em; border: none; border-radius: 4px;
-      background: #ddd; cursor: pointer; font-weight: 600;
+    #tabs {
+      display: flex; gap: 0.3em;
+      justify-content: center; margin-bottom: 0.5em;
+      flex-wrap: wrap;
     }
-    #tabs button.active { background: #007bff; color: #fff; }
+    #tabs button {
+      padding: 0.3em 0.8em;
+      border: none; border-radius: 4px;
+      background: var(--tab-bg);
+      cursor: pointer; font-weight: 600;
+      color: var(--text); font-size: 0.9em;
+    }
+    #tabs button.active {
+      background: var(--tab-active-bg);
+      color: var(--tab-active-text);
+    }
     #controls {
-      display: flex; gap: 0.5em; flex-wrap: wrap; margin-bottom: 0.5em;
-      justify-content: center;
+      display: flex; gap: 0.5em; flex-wrap: wrap;
+      margin-bottom: 0.5em;
+      justify-content: center; align-items: center;
     }
     #nickname, #filterSelect {
-      padding: 0.6em; font-size: 1em; border-radius: 4px; border: 1px solid #ccc;
-      width: 200px;
-    }
-    #warning {
-      text-align: center; color: #fff; background: #e74c3c;
-      padding: 0.5em; margin-bottom: 0.5em; display: none;
+      padding: 0.6em; font-size: 1em;
       border-radius: 4px;
+      border: 1px solid var(--control-border);
+      width: 180px;
+      background: var(--card-bg);
+      color: var(--text);
     }
-    .loading { text-align: center; color: #666; margin: 1em 0; }
+    /* Dark mode switch */
+    .switch {
+      position: relative; display: inline-block;
+      width: 40px; height: 20px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--switch-bg);
+      transition: .4s; border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute; content: "";
+      height: 16px; width: 16px;
+      left: 2px; bottom: 2px;
+      background: var(--switch-knob);
+      transition: .4s; border-radius: 50%;
+    }
+    input:checked + .slider { background: var(--switch-bg-active); }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .loading {
+      text-align: center; color: var(--text);
+      margin: 1em 0;
+    }
     .card {
-      background: #fff; padding: 1em; margin-bottom: 1em;
-      border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: relative;
+      background: var(--card-bg);
+      padding: 1em; margin-bottom: 1em;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       border-left: 6px solid transparent;
       transition: background 0.2s;
     }
-    .card:hover { background: #fafafa; }
-    .artist { font-size: 1.2em; font-weight: bold; }
-    .info    { color: #555; margin: 0.5em 0; }
-    .attendees { color: #333; font-size: 0.9em; margin: 0.5em 0; }
+    .card:hover { background: var(--card-hover); }
+    .artist {
+      font-size: 1.2em; font-weight: bold;
+      display: flex; align-items: center; gap: 0.4em;
+    }
+    .info {
+      color: var(--text); margin: 0.5em 0;
+      font-size: 0.9em;
+    }
+    .attendees {
+      color: var(--text); font-size: 0.9em;
+      margin: 0.5em 0;
+    }
+    .warning-icon {
+      color: #e74c3c; font-size: 1em;
+    }
     button.join, button.leave {
-      padding: 0.6em 1.2em; font-size: 1em; cursor: pointer;
-      border: none; border-radius: 4px; font-weight: 600;
+      padding: 0.6em 1em; font-size: 1em;
+      cursor: pointer; border: none;
+      border-radius: 4px; font-weight: 600;
     }
     button.join { background: #28a745; color: #fff; }
-    button.leave{ background: #dc3545; color: #fff; }
+    button.leave { background: #dc3545; color: #fff; }
   </style>
 </head>
 <body>
@@ -60,8 +144,11 @@
       <select id="filterSelect">
         <option value="">All attendees</option>
       </select>
+      <label class="switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
     </div>
-    <div id="warning"></div>
   </div>
 
   <div id="schedule"></div>
@@ -69,12 +156,12 @@
   <script>
     const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec'; // your /exec URL
 
-    let me = '', currentDay = '', latestData = [];
+    let me = '', currentDay = '', latestData = [], overlapIds = [];
     const tabsEl = document.getElementById('tabs');
     const nickEl = document.getElementById('nickname');
     const filterEl = document.getElementById('filterSelect');
     const scheduleEl = document.getElementById('schedule');
-    const warnEl = document.getElementById('warning');
+    const themeToggle = document.getElementById('themeToggle');
 
     function initTabs() {
       const s = document.createElement('script');
@@ -90,7 +177,7 @@
         btn.dataset.day = day;
         if (idx === 0) { btn.classList.add('active'); currentDay = day; }
         btn.addEventListener('click', () => {
-          document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+          document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentDay = day;
           loadSchedule();
@@ -100,7 +187,7 @@
       loadSchedule();
     }
 
-    nickEl.addEventListener('change', () => render(latestData));
+    nickEl.addEventListener('change', () => { me = nickEl.value.trim(); render(latestData); });
     filterEl.addEventListener('change', () => render(latestData));
 
     function loadSchedule() {
@@ -114,9 +201,31 @@
 
     function gotData(data) {
       latestData = data;
+      computeOverlaps();
       populateFilterOptions(data);
       render(data);
-      checkOverlap();
+    }
+
+    function computeOverlaps() {
+      overlapIds = [];
+      if (!me) return;
+      const items = latestData.filter(item =>
+        (item.Attendees||'').split(',').map(s=>s.trim()).includes(me)
+      );
+      const times = items.map(item => {
+        const [start, end] = item.Time.split('–').map(s=>s.trim());
+        const [hs, ms] = start.split(':').map(Number);
+        const [he, meT] = end.split(':').map(Number);
+        return { id: item.rowIndex, start: hs*60+ms, end: he*60+meT };
+      }).sort((a,b)=>a.start-b.start);
+      for (let i=0; i<times.length; i++) {
+        for (let j=i+1; j<times.length; j++) {
+          if (times[j].start < times[i].end) {
+            overlapIds.push(times[i].id, times[j].id);
+          }
+        }
+      }
+      overlapIds = Array.from(new Set(overlapIds));
     }
 
     function populateFilterOptions(data) {
@@ -126,24 +235,25 @@
       );
       filterEl.innerHTML = '<option value="">All attendees</option>';
       Array.from(names).sort().forEach(n => {
-        const opt = document.createElement('option'); opt.value=n; opt.textContent=n;
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
         filterEl.appendChild(opt);
       });
     }
 
     function render(data) {
       scheduleEl.innerHTML = '';
-      warnEl.style.display = 'none';
       const filterName = filterEl.value;
-      const nick = nickEl.value.trim();
       data.forEach(item => {
         const list = (item.Attendees||'').split(',').map(s=>s.trim()).filter(Boolean);
         if (filterName && !list.includes(filterName)) return;
-        const joined = nick && list.includes(nick);
-        const card = document.createElement('div'); card.className='card';
-        if (item.Color) card.style.borderLeftColor=item.Color;
+        const joined = me && list.includes(me);
+        const card = document.createElement('div'); card.className = 'card';
+        if (item.Color) card.style.borderLeftColor = item.Color;
+        const warn = overlapIds.includes(item.rowIndex)
+          ? '<span class="warning-icon" title="Time overlap">⚠️</span>' : '';
         card.innerHTML = `
-          <div class="artist">${item.Artist}</div>
+          <div class="artist">${warn}${item.Artist}</div>
           <div class="info">${item.Time} @ ${item.Stage}</div>
           <div class="attendees">👥 ${list.length?list.join(', '):'No one yet'}</div>
           <button class="${joined?'leave':'join'}" onclick="toggle(${item.rowIndex}, event)">
@@ -153,53 +263,26 @@
       });
     }
 
-    function parseTime(str) {
-      const [start, end] = str.split('–').map(s=>s.trim());
-      const [hs, ms] = start.split(':').map(Number);
-      const [he, me] = end.split(':').map(Number);
-      return { start: hs*60+ms, end: he*60+me };
-    }
-
-    function checkOverlap() {
-      const nick = nickEl.value.trim();
-      if (!nick) return;
-      const joinedItems = latestData.filter(item =>
-        (item.Attendees||'').split(',').map(s=>s.trim()).includes(nick)
-      );
-      const times = joinedItems.map(item => ({
-        name: item.Artist,
-        ...parseTime(item.Time)
-      })).sort((a,b)=>a.start - b.start);
-      const overlaps = [];
-      for (let i = 0; i < times.length; i++) {
-        for (let j = i+1; j < times.length; j++) {
-          if (times[j].start < times[i].end) {
-            overlaps.push(`${times[i].name} & ${times[j].name}`);
-          }
-        }
-      }
-      if (overlaps.length) {
-        warnEl.textContent = `⚠️ Overlap: ${[...new Set(overlaps)].join('; ')}`;
-        warnEl.style.display = 'block';
-      }
-    }
-
     function toggle(row, ev) {
-      const nick = nickEl.value.trim();
-      if (!nick) return alert('Please enter your nickname first.');
+      if (!me) return alert('Please enter your nickname first.');
       const btn = ev.currentTarget; btn.disabled=true; const orig = btn.textContent; btn.textContent='⏳';
       const s = document.createElement('script');
       s.src = `${backend}`
             + `?action=toggle`
             + `&day=${encodeURIComponent(currentDay)}`
             + `&rowIndex=${row}`
-            + `&nickname=${encodeURIComponent(nick)}`
+            + `&nickname=${encodeURIComponent(me)}`
             + `&callback=gotData`;
       document.body.appendChild(s);
-      setTimeout(()=>{if(btn.disabled){btn.disabled=false;btn.textContent=orig;}},5000);
+      setTimeout(() => { if (btn.disabled) { btn.disabled = false; btn.textContent = orig; } }, 5000);
     }
 
-    // Initialize
+    // Dark mode toggle
+    themeToggle.addEventListener('change', () => {
+      document.body.classList.toggle('dark', themeToggle.checked);
+    });
+
+    // Initialize tabs
     initTabs();
   </script>
 </body>
