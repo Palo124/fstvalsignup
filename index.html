@@ -21,6 +21,7 @@
     }
     .join  { background: #28a745; color: white; }
     .leave { background: #dc3545; color: white; }
+    .loading { text-align: center; color: #888; margin: 1em 0; }
   </style>
 </head>
 <body>
@@ -30,31 +31,32 @@
   <div id="schedule"></div>
 
   <script>
-    // ← REPLACE this with your deployed Apps Script Web App URL (no extra path than /exec)
-    const backend = 'Phttps://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';
+    // ← REPLACE with your Apps Script Web App URL (must end in /exec)
+    const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';
 
     let me = '';
-    document.getElementById('nickname')
-      .addEventListener('change', e => {
-        me = e.target.value.trim();
-        loadSchedule();
-      });
+    const scheduleEl = document.getElementById('schedule');
+    const nicknameEl = document.getElementById('nickname');
 
-    // Load via JSONP
+    nicknameEl.addEventListener('change', e => {
+      me = e.target.value.trim();
+      loadSchedule();
+    });
+
+    // Show loading text, then inject JSONP
     function loadSchedule() {
+      scheduleEl.innerHTML = '<div class="loading">Loading schedule…</div>';
       const script = document.createElement('script');
       script.src = `${backend}?callback=render&nocache=${Date.now()}`;
       document.body.appendChild(script);
     }
 
-    // Called by JSONP to render the cards
+    // Render data into cards
     function render(data) {
-      const container = document.getElementById('schedule');
-      container.innerHTML = '';
+      scheduleEl.innerHTML = '';  // clear loading
       data.forEach(item => {
         const names  = (item.Attendees || '').split(',').map(s=>s.trim()).filter(Boolean);
         const joined = me && names.includes(me);
-
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
@@ -62,27 +64,43 @@
           <div class="info">${item.Time} @ ${item.Stage}</div>
           <div class="attendees">👥 ${names.length ? names.join(', ') : 'No one yet'}</div>
           <button class="${joined ? 'leave' : 'join'}"
-                  onclick="toggle(${item.rowIndex})">
+                  onclick="toggle(${item.rowIndex}, event)">
             ${ joined ? 'Leave' : 'Join' }
           </button>
         `;
-        container.appendChild(card);
+        scheduleEl.appendChild(card);
       });
     }
 
-    // Toggle by injecting a JSONP request
-    function toggle(row) {
-      if (!me) return alert('Please enter your nickname first.');
+    // Toggle attendance with single JSONP call & loading indicator per button
+    function toggle(row, event) {
+      if (!me) {
+        alert('Please enter your nickname first.');
+        return;
+      }
+      const btn = event.currentTarget;
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳';
+
       const script = document.createElement('script');
       script.src = `${backend}`
         + `?action=toggle`
         + `&rowIndex=${row}`
         + `&nickname=${encodeURIComponent(me)}`
-        + `&callback=loadSchedule`;
+        + `&callback=render`;
       document.body.appendChild(script);
+
+      // Optional: re-enable & reset button in case render fails
+      setTimeout(() => {
+        if (btn.disabled) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      }, 5000);
     }
 
-    // Initial load (will show “No nickname” until you set one)
+    // Initial load
     loadSchedule();
   </script>
 </body>
