@@ -7,6 +7,10 @@
   <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    html, body {
+      height: auto !important;
+      overflow-y: auto !important;
+    }
     :root {
       --bg: #ffffff;
       --text: #333;
@@ -19,6 +23,9 @@
       --switch-bg: #ccc;
       --switch-knob: #fff;
       --switch-bg-active: #007bff;
+    }
+        select[multiple] {
+      height: 7em;
     }
     body.dark {
       --bg: #0c0c0c;
@@ -51,6 +58,13 @@
       border: 2px solid var(--control-border);
       font-weight: 200;
       margin-bottom: 1em;
+    }
+
+    .divider-line {
+      border: 0;
+      border-top: 2px solid #444;
+      margin: 1em 0;
+      opacity: 0.5;
     }
 
     #tabs {
@@ -429,6 +443,51 @@
       background-color: #ffc107; /* yellow */
       transition: width 0.5s ease;
     }
+    .now-playing.pinned-shrink {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4em 1em;
+      font-size: 0.9em;
+      height: 2.5em;
+      overflow: hidden;
+      border: 2px solid #f1c40f;
+      background: #222;
+      color: #f1c40f;
+    }
+
+    .now-playing.pinned-shrink .artist,
+    .now-playing.pinned-shrink .attendees,
+    .now-playing.pinned-shrink .progress-container,
+    .now-playing.pinned-shrink button,
+    .now-playing.pinned-shrink .spotify-link,
+    .now-playing.pinned-shrink .stage-tag,
+    .now-playing.pinned-shrink .tag-container {
+      display: none !important;
+    }
+
+    .now-playing.pinned-shrink .artist-name {
+      font-weight: bold;
+    }
+
+    .now-playing.pinned-shrink .countdown {
+      font-family: monospace;
+    }
+    .now-playing.pinned-shrink > *:not(.artist-name):not(.countdown) {
+      display: none !important;
+    }
+    .now-playing {
+      position: sticky;
+      top: 0;
+      z-index: 100;               /* on top of other cards */
+      transition: all 0.3s ease;  /* for smooth expand/shrink */
+    }
+
+    /* countdown style */
+    .now-playing .countdown {
+      font-family: monospace;
+      font-weight: 600;
+    }
   </style>
 </head>
   <body class="dark">
@@ -442,14 +501,23 @@
       <div id="menu-wrapper">
         <div id="controls" class="collapsed">
           <input id="nickname" placeholder="Your nickname">
-          <select id="filterSelect"><option value="">All attendees</option></select>
-          <select id="stageSelect"><option value="">All stages</option></select>
+          <select id="filterSelect" multiple><option value="">All attendees</option></select>
+          <select id="stageSelect" multiple><option value="">All stages</option></select>
 
           <!-- Theme toggle -->
           <div class="theme-toggle">
             <span class="switch-label">Dark Mode</span>
             <label class="switch">
               <input type="checkbox" id="themeToggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+              <!-- Pin now-playing toggle -->
+          <div class="theme-toggle">
+            <span class="switch-label">Pin now-playing</span>
+            <label class="switch">
+              <input type="checkbox" id="pinToggle">
               <span class="slider"></span>
             </label>
           </div>
@@ -463,8 +531,7 @@
               <span class="slider"></span>
           </div>
         </div>
-      </div>
-
+        
       <!-- Tabs stay sticky at the top -->
       <div id="tabs"></div>
 
@@ -476,259 +543,6 @@
           </p>
         </footer>
     </div>
-  <script>
-    const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';
-    let me = '', currentDay = '', latestData = [], overlapIds = [];
-    // Map each tab label to its actual calendar date
-    /////////////////////////////////////////
-    /////////////////////////////////////////
-    ////////////////////////////////////////
-    //////Update this later/////////////////
-    //Based on the real dates//////////////
-    const dayToDate = {
-      'Streda 2.7.':   '2025-07-02',
-      'Štvrtok 3.7.': '2025-07-03',
-      'Piatok 4.7.':   '2025-07-04',
-      'Sobota 5.7.':   '2025-07-05'
-      // …add more days if needed
-    };
-    const tabsEl = document.getElementById('tabs');
-    const nickEl = document.getElementById('nickname');
-    const filterEl = document.getElementById('filterSelect');
-    const stageEl = document.getElementById('stageSelect');
-    const scheduleEl = document.getElementById('schedule');
-    const themeToggle = document.getElementById('themeToggle');
-
-    // ✅ Load nickname from localStorage
-    me = localStorage.getItem('nickname') || '';
-    nickEl.value = me;
-
-    nickEl.addEventListener('input', () => {
-      me = nickEl.value.trim();
-      localStorage.setItem('nickname', me);
-    });
-
-    function initTabs() {
-      const s = document.createElement('script');
-      s.src = `${backend}?action=listDays&callback=renderTabs&nocache=${Date.now()}`;
-      document.body.appendChild(s);
-    }
-    function renderTabs(days) {
-      tabsEl.innerHTML = '';
-      days.forEach((day, idx) => {
-        const btn = document.createElement('button'); btn.textContent = day;
-        btn.dataset.day = day; if (idx === 0) { btn.classList.add('active'); currentDay = day; }
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentDay = day; loadSchedule();
-        }); tabsEl.appendChild(btn);
-      }); loadSchedule();
-    }
-    [nickEl, filterEl, stageEl].forEach(el => el.addEventListener('change', () => render(latestData)));
-    const collisionToggle = document.getElementById('collisionToggle');
-    collisionToggle.addEventListener('change', () => render(latestData));
-    function loadSchedule() { scheduleEl.innerHTML = '<div class="loading">Loading…</div>'; const s = document.createElement('script'); s.src = `${backend}?day=${encodeURIComponent(currentDay)}&callback=gotData&nocache=${Date.now()}`; document.body.appendChild(s); }
-    function hashStringToHSL(str) {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const hue = Math.abs(hash) % 360;
-      return `hsl(${hue}, 65%, 55%)`; // you can tweak saturation & lightness
-    }
-    const colorPalette = [
-      '#e57373', '#81c784', '#64b5f6', '#ffd54f', '#ba68c8', '#4db6ac',
-      '#f06292', '#7986cb', '#4fc3f7', '#ff8a65', '#a1887f', '#7f85c7'
-    ];
-    const attendeeColors = {};
-
-    function getColorForName(name) {
-      if (!attendeeColors[name]) {
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-          hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const index = Math.abs(hash) % colorPalette.length;
-        attendeeColors[name] = colorPalette[index];
-      }
-      return attendeeColors[name];
-    }
-    function gotData(data) { latestData = data; computeOverlaps(); populateFilters(data); render(data); }
-    
-    function computeOverlaps() {
-      overlapIds = [];
-      if (!me) return;
-
-      // Filter only events where current user is attending
-      const items = latestData.filter(item =>
-        (item.Attendees || '')
-          .split(',')
-          .map(s => s.trim())
-          .includes(me)
-      );
-
-      // Extract and convert time to minutes
-      const times = items.map(item => {
-        const [start, end] = item.Time.split('–').map(s => s.trim());
-        const [hs, ms] = start.split(':').map(Number);
-        const [he, meT] = end.split(':').map(Number);
-        return {
-          id: item.rowIndex,
-          start: hs * 60 + ms,
-          end: he * 60 + meT,
-        };
-      }).sort((a, b) => a.start - b.start);
-
-      // Check for overlapping intervals
-      for (let i = 0; i < times.length; i++) {
-        for (let j = i + 1; j < times.length; j++) {
-          if (times[j].start < times[i].end) {
-            overlapIds.push(times[i].id, times[j].id);
-          }
-        }
-      }
-
-      // Remove duplicates
-      overlapIds = Array.from(new Set(overlapIds));
-    }
-
-    function populateFilters(data) {
-      const names = new Set();
-      const stages = new Set();
-
-      data.forEach(item => {
-        (item.Attendees || '')
-          .split(',')
-          .map(s => s.trim())
-          .forEach(n => n && names.add(n));
-        stages.add(item.Stage);
-      });
-
-      // Populate attendee filter
-      filterEl.innerHTML = '<option value="">All attendees</option>';
-      Array.from(names).sort().forEach(n => {
-        filterEl.appendChild(new Option(n, n));
-      });
-
-      // Populate stage filter
-      stageEl.innerHTML = '<option value="">All stages</option>';
-      Array.from(stages).sort().forEach(s => {
-        stageEl.appendChild(new Option(s, s));
-      });
-    }
-    
-    function getProgress(startDate, endDate) {
-      const now       = new Date();
-      const totalMs   = endDate  - startDate;
-      const remainMs  = endDate  - now;
-      const pctLeft   = (remainMs / totalMs) * 100;
-      return Math.min(100, Math.max(0, pctLeft));
-    }
-
-    function render(data) {
-      scheduleEl.innerHTML = '';
-
-      const fname = filterEl.value;
-      const sname = stageEl.value;
-      const showOnlyCollisions = collisionToggle.checked;
-
-      data.forEach(item => {
-        const list = (item.Attendees || '')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        const joined = me && list.includes(me);
-
-        // Apply filters
-        if (fname && !list.includes(fname)) return;
-        if (sname && item.Stage !== sname) return;
-        if (showOnlyCollisions && !overlapIds.includes(item.rowIndex)) return;
-
-        const card = document.createElement('div');
-        card.className = 'card';
-
-        // Time parsing
-        // 1) build the “base date” for this sheet/day
-        const baseDateStr = dayToDate[currentDay];                           // e.g. "2025-07-04"
-        const baseDate    = new Date(baseDateStr + 'T00:00:00');
-
-        // 2) parse the start/end times
-        const [start, end] = item.Time.split('–').map(t => t.trim());
-        const [sh, sm]     = start.split(':').map(Number);
-        const [eh, em]     = end.split(':').map(Number);
-
-        // 3) create Date objects for start and end
-        const startDate = new Date(baseDate);
-        startDate.setHours(sh, sm, 0, 0);
-
-        const endDate = new Date(baseDate);
-        endDate.setHours(eh, em, 0, 0);
-
-        // 4) if the end time is earlier than the start, roll over to next day
-        if (eh < sh || (eh === sh && em < sm)) {
-          endDate.setDate(endDate.getDate() + 1);
-        }
-
-        // 5) compare with current timestamp
-        const now           = new Date();
-        const isNowPlaying  = now >= startDate && now < endDate;
-        const isCollision  = overlapIds.includes(item.rowIndex); 
-
-        // 6) compute countdown-style progress
-        const progress = isNowPlaying
-          ? getProgress(startDate, endDate)
-          : 0;
-        console.log(currentDay, baseDateStr);
-        // 7) apply the "now playing" style
-        if (isNowPlaying) {
-          card.classList.add('now-playing');
-          card.style.borderColor = '#f1c40f';
-          card.innerHTML += `<span class="now-tag">Now Playing</span>`;
-        } else if (item.Color) {
-          card.style.borderColor = item.Color;
-        }
-        if (overlapIds.includes(item.rowIndex)) {
-          card.classList.add('has-collision');
-        }
-        const tagsHTML = `
-          <div class="tag-container">
-            ${isNowPlaying ? '<div class="now-playing-tag">Now Playing</div>' : ''}
-            ${isCollision  ? '<div class="collision-tag">⚠️ Collision</div>'  : ''}
-          </div>
-        `;
-
-        card.innerHTML = `
-          ${tagsHTML}
-          <div class="stage-tag">${item.Stage}</div>
-          <div class="artist">
-            <span class="artist-name">${item.Artist}</span>
-            <span class="time">${item.Time}</span>
-            <a href="https://open.spotify.com/search/${encodeURIComponent(item.Artist.replace(/\s*\\([^)]+\\)/, ''))}" target="_blank" class="spotify-link" title="Search on Spotify">
-              <svg class="spotify-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 168">
-                <path fill="#1ED760" d="M84 0a84 84 0 1 0 .001 168.001A84 84 0 0 0 84 0zm38.4 121.1a5.25 5.25 0 0 1-7.2 1.6c-19.8-12.1-44.8-14.8-74.4-8.1a5.27 5.27 0 0 1-2.4-10.2c32.6-7.7 60.7-4.6 83.6 9.3a5.23 5.23 0 0 1 .7 7.4zm10.2-20.4a6.6 6.6 0 0 1-9 2.1c-22.7-14-57.3-18.1-84-9.9a6.6 6.6 0 1 1-3.6-12.7c31.4-8.8 69.3-4.3 95.5 11.1a6.6 6.6 0 0 1 2.1 9.4zm.9-20.9c-27.1-16.2-72.1-17.6-98-9.7a7.88 7.88 0 1 1-4.5-15.1c29.6-8.7 79.2-7.1 110.5 11.3a7.9 7.9 0 0 1-8 13.5z"/>
-              </svg>
-            </a>
-          </div>
-
-          ${isNowPlaying ? `
-            <div class="progress-container">
-              <div class="progress-bar" style="width: ${progress}%;"></div>
-            </div>` : ''}
-
-          <div class="attendees">
-            ${list.length ? list.map(name => `<span class="attendee-tag" style="border-color: ${getColorForName(name)}">${name}</span>`).join('') : '⭕ No one yet'}
-          </div>
-          <button class="${joined?'leave':'join'}" onclick="toggle(${item.rowIndex},event)">\
-            ${joined?'Leave':'Join'}\
-          </button>`; scheduleEl.appendChild(card); }); }
-    function toggle(row, ev) { if (!me) return alert('Enter your nickname first in ☰ -> Your nickname'); const btn=ev.currentTarget; btn.disabled=true; const orig=btn.textContent; btn.textContent='⏳'; const s=document.createElement('script'); s.src = `${backend}?action=toggle&day=${encodeURIComponent(currentDay)}&rowIndex=${row}&nickname=${encodeURIComponent(me)}&callback=gotData`; document.body.appendChild(s); setTimeout(() => { if (btn.disabled) { btn.disabled=false; btn.textContent=orig; } },5000); }
-    themeToggle.addEventListener('change', ()=> document.body.classList.toggle('dark', themeToggle.checked)); initTabs();
-    const menuToggle = document.getElementById('menu-toggle');
-    const controls = document.getElementById('controls');
-
-    menuToggle.addEventListener('click', () => {
-      controls.classList.toggle('collapsed');
-});
-  </script>
+  <script src="lineup.js"></script>
 </body>
 </html>
