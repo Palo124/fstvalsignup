@@ -36,8 +36,7 @@
     body {
       font-family: 'Poppins', sans-serif;
       margin: 0; padding: 1em;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg); color: var(--text);
       transition: background 0.3s, color 0.3s;
     }
     h2 { text-align: center; margin-bottom: 0.5em; }
@@ -46,21 +45,17 @@
       padding-bottom: 0.5em; z-index: 100;
     }
     #tabs {
-      display: flex; gap: 0.3em;
+      display: flex; gap: 0.2em;
       justify-content: center; margin-bottom: 0.5em;
       flex-wrap: wrap;
     }
     #tabs button {
-      padding: 0.3em 0.8em;
+      padding: 0.2em 0.6em;
       border: none; border-radius: 4px;
-      background: var(--tab-bg);
-      cursor: pointer; font-weight: 600;
-      color: var(--text); font-size: 0.9em;
+      background: var(--tab-bg); cursor: pointer; font-weight: 600;
+      color: var(--text); font-size: 0.8em;
     }
-    #tabs button.active {
-      background: var(--tab-active-bg);
-      color: var(--tab-active-text);
-    }
+    #tabs button.active { background: var(--tab-active-bg); color: var(--tab-active-text); }
     #controls {
       display: flex; gap: 0.5em; flex-wrap: wrap;
       margin-bottom: 0.5em;
@@ -71,71 +66,46 @@
       border-radius: 4px;
       border: 1px solid var(--control-border);
       width: 180px;
-      background: var(--card-bg);
-      color: var(--text);
+      background: var(--card-bg); color: var(--text);
     }
     /* Dark mode switch */
     .switch {
-      position: relative; display: inline-block;
-      width: 40px; height: 20px;
+      position: relative; display: inline-block; width: 40px; height: 20px;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute; cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: var(--switch-bg);
-      transition: .4s; border-radius: 20px;
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--switch-bg); transition: .4s; border-radius: 20px;
     }
     .slider:before {
-      position: absolute; content: "";
-      height: 16px; width: 16px;
-      left: 2px; bottom: 2px;
-      background: var(--switch-knob);
-      transition: .4s; border-radius: 50%;
+      position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
+      background: var(--switch-knob); transition: .4s; border-radius: 50%;
     }
     input:checked + .slider { background: var(--switch-bg-active); }
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
-    .loading {
-      text-align: center; color: var(--text);
-      margin: 1em 0;
-    }
+    input:checked + .slider:before { transform: translateX(20px); }
+    .loading { text-align: center; color: var(--text); margin: 1em 0; }
     .card {
       position: relative;
-      background: var(--card-bg);
-      padding: 1em; margin-bottom: 1em;
-      border-radius: 6px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      background: var(--card-bg); padding: 1em; margin-bottom: 1em;
+      border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       border-left: 6px solid transparent;
       transition: background 0.2s;
     }
     .card:hover { background: var(--card-hover); }
-    .artist {
-      font-size: 1.2em; font-weight: bold;
-      display: flex; align-items: center; gap: 0.4em;
-    }
-    .info {
-      color: var(--text); margin: 0.5em 0;
-      font-size: 0.9em;
-    }
-    .attendees {
-      color: var(--text); font-size: 0.9em;
-      margin: 0.5em 0;
-    }
-    .warning-icon {
-      color: #e74c3c; font-size: 1em;
-    }
+    .artist { font-size: 1.2em; font-weight: bold; display: flex; align-items: center; gap: 0.4em; }
+    .info    { color: var(--text); margin: 0.5em 0; font-size: 0.9em; }
+    .attendees { color: var(--text); font-size: 0.9em; margin: 0.5em 0; }
+    .warning-icon { color: #e74c3c; font-size: 1em; }
     button.join, button.leave {
       padding: 0.6em 1em; font-size: 1em;
       cursor: pointer; border: none;
       border-radius: 4px; font-weight: 600;
     }
     button.join { background: #28a745; color: #fff; }
-    button.leave { background: #dc3545; color: #fff; }
+    button.leave{ background: #dc3545; color: #fff; }
   </style>
 </head>
-<body>
+<body class="dark">
   <h2>B4L Lineup Planner</h2>
   <div class="sticky-container">
     <div id="tabs"></div>
@@ -145,7 +115,7 @@
         <option value="">All attendees</option>
       </select>
       <label class="switch">
-        <input type="checkbox" id="themeToggle">
+        <input type="checkbox" id="themeToggle" checked>
         <span class="slider"></span>
       </label>
     </div>
@@ -235,8 +205,7 @@
       );
       filterEl.innerHTML = '<option value="">All attendees</option>';
       Array.from(names).sort().forEach(n => {
-        const opt = document.createElement('option');
-        opt.value = n; opt.textContent = n;
+        const opt = document.createElement('option'); opt.value = n; opt.textContent = n;
         filterEl.appendChild(opt);
       });
     }
@@ -277,12 +246,12 @@
       setTimeout(() => { if (btn.disabled) { btn.disabled = false; btn.textContent = orig; } }, 5000);
     }
 
-    // Dark mode toggle
+    // Dark mode toggle listener
     themeToggle.addEventListener('change', () => {
       document.body.classList.toggle('dark', themeToggle.checked);
     });
 
-    // Initialize tabs
+    // Initialize
     initTabs();
   </script>
 </body>
