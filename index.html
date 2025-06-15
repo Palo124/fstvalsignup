@@ -7,7 +7,7 @@
   <style>
     body { font-family: sans-serif; margin: 0; padding: 1em; background: #f0f0f0; }
     h2 { text-align: center; }
-    #tabs { display: flex; gap: 0.5em; justify-content: center; margin-bottom: 1em; }
+    #tabs { display: flex; gap: 0.5em; justify-content: center; margin-bottom: 1em; flex-wrap: wrap; }
     #tabs button {
       padding: 0.5em 1em; border: none; border-radius: 4px;
       background: #ddd; cursor: pointer;
@@ -39,12 +39,7 @@
 <body>
   <h2>🎵 Festival Signup</h2>
 
-  <div id="tabs">
-    <!-- adjust these to match your sheet names -->
-    <button data-day="Day1" class="active">Day 1</button>
-    <button data-day="Day2">Day 2</button>
-    <button data-day="Day3">Day 3</button>
-  </div>
+  <div id="tabs"></div>
 
   <div id="controls">
     <input id="nickname" placeholder="Your nickname">
@@ -56,32 +51,44 @@
   <div id="schedule"></div>
 
   <script>
-    const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';  // ← your /exec URL
+    const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec'; // your /exec URL
 
-    let me = '', currentDay = 'Day1', latestData = [];
-    const tabs = document.querySelectorAll('#tabs button');
+    let me = '', currentDay = '', latestData = [];
+    const tabsEl = document.getElementById('tabs');
     const nickEl = document.getElementById('nickname');
     const filterEl = document.getElementById('filterSelect');
     const scheduleEl = document.getElementById('schedule');
 
-    // Tab switching
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-      tabs.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      currentDay = btn.dataset.day;
+    // Fetch sheet names and build tabs dynamically
+    function initTabs() {
+      const s = document.createElement('script');
+      s.src = `${backend}?action=listDays&callback=renderTabs&nocache=${Date.now()}`;
+      document.body.appendChild(s);
+    }
+
+    function renderTabs(days) {
+      tabsEl.innerHTML = '';
+      days.forEach((day, idx) => {
+        const btn = document.createElement('button');
+        btn.textContent = day;
+        btn.dataset.day = day;
+        if (idx === 0) { btn.classList.add('active'); currentDay = day; }
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          currentDay = day;
+          loadSchedule();
+        });
+        tabsEl.appendChild(btn);
+      });
       loadSchedule();
-    }));
+    }
 
-    // Nickname input
-    nickEl.addEventListener('change', e => {
-      me = e.target.value.trim();
-      render(latestData);
-    });
-
-    // Filter selection
+    // Nickname and filter handlers
+    nickEl.addEventListener('change', () => render(latestData));
     filterEl.addEventListener('change', () => render(latestData));
 
-    // Load data via JSONP
+    // Load schedule for currentDay
     function loadSchedule() {
       scheduleEl.innerHTML = '<div class="loading">Loading…</div>';
       const s = document.createElement('script');
@@ -91,80 +98,63 @@
       document.body.appendChild(s);
     }
 
-    // JSONP callback
     function gotData(data) {
       latestData = data;
       populateFilterOptions(data);
       render(data);
     }
 
-    // Populate dropdown with unique attendee names
+    // Populate filter dropdown
     function populateFilterOptions(data) {
-      const namesSet = new Set();
-      data.forEach(item => {
-        (item.Attendees || '').split(',').map(s=>s.trim()).forEach(n => { if(n) namesSet.add(n); });
-      });
-      // Clear existing options
+      const names = new Set();
+      data.forEach(item => (item.Attendees||'').split(',').map(s=>s.trim()).forEach(n=>n&&names.add(n)));
       filterEl.innerHTML = '<option value="">All attendees</option>';
-      Array.from(namesSet).sort().forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
+      Array.from(names).sort().forEach(n => {
+        const opt = document.createElement('option'); opt.value=n; opt.textContent=n;
         filterEl.appendChild(opt);
       });
     }
 
-    // Render with filtering and coloring
+    // Render cards
     function render(data) {
-      const filterName = filterEl.value;
       scheduleEl.innerHTML = '';
+      const filterName = filterEl.value;
+      const nick = nickEl.value.trim();
       data.forEach(item => {
-        const names = (item.Attendees || '')
-                        .split(',').map(s=>s.trim()).filter(Boolean);
-        // Apply filter: only show if no filter or name included
-        if (filterName && !names.includes(filterName)) return;
-        const joined = me && names.includes(me);
-        const card = document.createElement('div');
-        card.className = 'card';
-        if (item.Color) card.style.borderLeftColor = item.Color;
+        const list = (item.Attendees||'').split(',').map(s=>s.trim()).filter(Boolean);
+        if (filterName && !list.includes(filterName)) return;
+        const joined = nick && list.includes(nick);
+        const card = document.createElement('div'); card.className='card';
+        if (item.Color) card.style.borderLeftColor=item.Color;
         card.innerHTML = `
           <div class="artist">${item.Artist}</div>
           <div class="info">${item.Time} @ ${item.Stage}</div>
-          <div class="attendees">👥 ${names.length?names.join(', '):'No one yet'}</div>
-          <button class="${joined?'leave':'join'}"
-                  onclick="toggle(${item.rowIndex}, event)">
+          <div class="attendees">👥 ${list.length?list.join(', '):'No one yet'}</div>
+          <button class="${joined?'leave':'join'}" onclick="toggle(${item.rowIndex}, event)">
             ${joined?'Leave':'Join'}
-          </button>
-        `;
+          </button>`;
         scheduleEl.appendChild(card);
       });
     }
 
-    // Toggle attendance (single JSONP call)
+    // Toggle attendance
     function toggle(row, ev) {
-      if (!me) {
-        alert('Please enter your nickname first.');
-        return;
-      }
-      const btn = ev.currentTarget;
-      btn.disabled = true;
-      const orig = btn.textContent;
-      btn.textContent = '⏳';
-
+      const nick = nickEl.value.trim();
+      if (!nick) return alert('Please enter your nickname first.');
+      const btn = ev.currentTarget; btn.disabled=true; const orig=btn.textContent; btn.textContent='⏳';
       const s = document.createElement('script');
       s.src = `${backend}`
             + `?action=toggle`
             + `&day=${encodeURIComponent(currentDay)}`
             + `&rowIndex=${row}`
-            + `&nickname=${encodeURIComponent(me)}`
+            + `&nickname=${encodeURIComponent(nick)}`
             + `&callback=gotData`;
       document.body.appendChild(s);
-
-      setTimeout(()=>{ if (btn.disabled) { btn.disabled = false; btn.textContent = orig; } }, 5000);
+      setTimeout(()=>{if(btn.disabled){btn.disabled=false;btn.textContent=orig;}},5000);
     }
 
-    // Initial load
-    loadSchedule();
+    // Initialize
+    initTabs();
   </script>
 </body>
 </html>
