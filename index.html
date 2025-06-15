@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Festival Planner</title>
+  <style>
+    body { font-family: sans-serif; padding: 1em; background: #f8f8f8; }
+    .card { background: white; padding: 1em; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 1em; }
+    .artist { font-size: 1.2em; font-weight: bold; }
+    .info { color: #666; margin-bottom: 0.5em; }
+    .attendees { font-size: 0.9em; color: #333; }
+    button { padding: 0.5em 1em; border: none; border-radius: 5px; background: #007bff; color: white; cursor: pointer; }
+    button.leave { background: #dc3545; }
+  </style>
+</head>
+<body>
+  <h2>🎵 Festival Schedule</h2>
+  <input id="nickname" placeholder="Enter your name" style="width: 100%; padding: 0.5em; margin: 1em 0;" />
+  <div id="schedule"></div>
+
+  <script>
+    const backendUrl = "https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec";
+    let nickname = "";
+
+    document.getElementById("nickname").addEventListener("change", (e) => {
+      nickname = e.target.value.trim();
+    });
+
+    async function loadSchedule() {
+      const res = await fetch(backendUrl);
+      const data = await res.json();
+      const container = document.getElementById("schedule");
+      container.innerHTML = "";
+
+      data.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        const attendees = item.Attendees ? item.Attendees.split(",").map(s => s.trim()) : [];
+        const joined = attendees.includes(nickname);
+
+        card.innerHTML = `
+          <div class="artist">${item.Artist}</div>
+          <div class="info">${item.Time} @ ${item.Stage}</div>
+          <div class="attendees">👥 ${attendees.length ? attendees.join(", ") : "No one yet"}</div>
+          <button class="${joined ? 'leave' : ''}" onclick='toggleJoin(${item.rowIndex}, this)'>${joined ? "Leave" : "Join"}</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function toggleJoin(rowIndex, btn) {
+      if (!nickname) return alert("Enter your nickname first");
+
+      btn.disabled = true;
+      await fetch(backendUrl, {
+        method: "POST",
+        body: JSON.stringify({ rowIndex, nickname }),
+        headers: { "Content-Type": "application/json" }
+      });
+      await loadSchedule();
+    }
+
+    loadSchedule();
+  </script>
+</body>
+</html>
