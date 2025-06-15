@@ -381,6 +381,15 @@
     const scheduleEl = document.getElementById('schedule');
     const themeToggle = document.getElementById('themeToggle');
 
+    // ✅ Load nickname from localStorage
+    me = localStorage.getItem('nickname') || '';
+    nickEl.value = me;
+
+    nickEl.addEventListener('input', () => {
+      me = nickEl.value.trim();
+      localStorage.setItem('nickname', me);
+    });
+
     function initTabs() {
       const s = document.createElement('script');
       s.src = `${backend}?action=listDays&callback=renderTabs&nocache=${Date.now()}`;
