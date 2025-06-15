@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f0f0f0;
+      --bg: #ffffff;
       --text: #333;
       --card-bg: #fff;
       --card-hover: #fafafa;
@@ -21,9 +21,9 @@
       --switch-bg-active: #007bff;
     }
     body.dark {
-      --bg: #222;
+      --bg: #0c0c0c;
       --text: #eee;
-      --card-bg: #333;
+      --card-bg: #000000;
       --card-hover: #444;
       --tab-bg: #444;
       --tab-active-bg: #555;
@@ -41,95 +41,343 @@
     }
     h2 { text-align: center; margin-bottom: 0.5em; }
     .sticky-container {
-      position: sticky; top: 0; background: var(--bg);
-      padding-bottom: 0.5em; z-index: 100;
+      padding-bottom: 0.5em;
+    }
+    .time {
+      font-size: 0.75em;
+      padding: 0.1em 0.5em;
+      background: rgba(127,127,127,0.1);  /* light background */
+      border-radius: 20px;
+      border: 2px solid var(--control-border);
+    }
+
+    #tabs {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      padding: 0.4em 0;
     }
     #tabs {
-      display: flex; gap: 0.2em;
-      justify-content: center; margin-bottom: 0.5em;
-      flex-wrap: wrap;
-    }
-    #tabs button {
-      padding: 0.2em 0.6em;
-      border: none; border-radius: 4px;
-      background: var(--tab-bg); cursor: pointer; font-weight: 600;
-      color: var(--text); font-size: 0.8em;
-    }
-    #tabs button.active { background: var(--tab-active-bg); color: var(--tab-active-text); }
-    #controls {
-      display: flex; gap: 0.5em; flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      padding: 0.4em 0;
       margin-bottom: 0.5em;
-      justify-content: center; align-items: center;
+
+      display: block;                /* Important: remove flex */
+      overflow-x: auto;             /* Enable horizontal scroll */
+      white-space: nowrap;          /* Keep buttons on one line */
+      scrollbar-width: thin;        /* Optional: slim scrollbar for Firefox */
     }
-    #nickname, #filterSelect {
-      padding: 0.6em; font-size: 1em;
+
+    #tabs button {
+      background: transparent;
+      color: var(--text);
+      padding: 0.2em 0.6em;
+      border: none;
+      border-bottom: 2px solid transparent;
+      display: inline-block;        /* Important for nowrap to work */
+      font-weight: 600;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
+    #tabs button.active {
+      border-bottom-color: var(--tab-active-bg);
+      color: var(--tab-active-bg);
+    }
+    #logo-title {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+
+    #logo-title img {
+      max-width: 200px;
+      height: auto;
+      display: block;
+      margin: 0 auto 0.5em;
+    }
+
+    #logo-title h2 {
+      margin: 0;
+      font-weight: 600;
+      font-size: 1em;
+      color: var(--text); /* Ensures theme compatibility */
+    }
+
+    #logo-title {
+      position: relative;        /* Important for absolute positioning inside */
+      text-align: center;        /* Center the title */
+      margin-bottom: 1em;
+    }
+
+    #title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    #controls {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+      margin-bottom: 0.5em;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Hide only when collapsed */
+    #controls.collapsed {
+      display: none;
+    }
+    #nickname,
+    #filterSelect,
+    #stageSelect {
+      padding: 0.6em 1em;
+      font-size: 0.95em;
+      border: 2px solid var(--control-border);
+      border-radius: 20px;
+      background: var(--card-bg);     /* respects theme */
+      color: var(--text);             /* respects theme */
+      width: 200px;
+      transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    #nickname::placeholder {
+      color: var(--text);             /* placeholder also themed */
+      opacity: 0.5;
+    }
+
+    #nickname:focus,
+    #filterSelect:focus,
+    #stageSelect:focus {
+      border-color: var(--tab-active-bg);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+    }
+    @media (max-width: 600px) {
+    #controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    #nickname,
+    #filterSelect,
+    #stageSelect {
+      width: 100%;
+      max-width: 300px;   /* Optional: limit how wide they grow */
+      margin: 0 auto;     /* Center horizontally */
+    }
+
+    .switch-container,
+    .theme-toggle {
+      justify-content: center;
+    }
+  }
+    /* Hamburger button */
+    #menu-toggle {
+      position: absolute;        /* Position relative to #logo-title */
+      top: 0;
+      left: 0;
+      font-size: 1.4em;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      padding: 0.3em 0.6em;
       border-radius: 4px;
-      border: 1px solid var(--control-border);
-      width: 180px;
-      background: var(--card-bg); color: var(--text);
+    }
+
+    /* Filters container (hidden by default) */
+    #controls {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 3em; /* so it's not covered by the button */
+      margin-bottom: 0.5em;
+    }
+
+    #controls.collapsed {
+      display: none;
+    }
+    #site-footer {
+      text-align: center;
+      padding: 2em 1em;
+      margin-top: 2em;
+      font-size: 0.9em;
+      background: rgba(0, 0, 0, 0.05); /* subtle background */
+      color: var(--text);
+      border-top: 1px solid var(--control-border);
+    }
+    
+
+    body.dark #site-footer {
+      background: rgba(255, 255, 255, 0.05);
     }
     /* Dark mode switch */
-    .switch {
-      position: relative; display: inline-block; width: 40px; height: 20px;
-    }
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
       background: var(--switch-bg); transition: .4s; border-radius: 20px;
     }
-    .slider:before {
-      position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
-      background: var(--switch-knob); transition: .4s; border-radius: 50%;
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px;
+      left: 2px; bottom: 2px; background: var(--switch-knob); transition: .4s; border-radius: 50%;
     }
     input:checked + .slider { background: var(--switch-bg-active); }
     input:checked + .slider:before { transform: translateX(20px); }
     .loading { text-align: center; color: var(--text); margin: 1em 0; }
     .card {
       position: relative;
-      background: var(--card-bg); padding: 1em; margin-bottom: 1em;
-      border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      border-left: 6px solid transparent;
-      transition: background 0.2s;
+      background: transparent;
+      padding: 0.6em;
+      margin-bottom: 1em;
+      border-radius: 20px;
+
+      border: 2px solid var(--control-border); /* Default fallback */
+      transition: border-color 0.2s;
     }
-    .card:hover { background: var(--card-hover); }
-    .artist { font-size: 1.2em; font-weight: bold; display: flex; align-items: center; gap: 0.4em; }
+    .card:hover {
+      border-color: #ffffffcc;        /* slightly brighter on hover */
+      background: rgba(255, 255, 255, 0.05);  /* optional slight glow */
+    }
+    .card-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.5em;
+    }
+    .artist {
+      position: relative;
+      font-size: 1.1em;
+      font-weight: bold;
+      display: flex;
+      line-height: 1.4;
+      padding-right: 6em; /* Reserve space for the stage tag */
+      word-wrap: break-word;
+      flex-wrap: wrap;     /* allow wrapping */
+      gap: 0.4em;
+    }
     .info    { color: var(--text); margin: 0.5em 0; font-size: 0.9em; }
-    .attendees { color: var(--text); font-size: 0.9em; margin: 0.5em 0; }
-    .warning-icon { color: #e74c3c; font-size: 1em; }
-    button.join, button.leave {
-      padding: 0.6em 1em; font-size: 1em;
-      cursor: pointer; border: none;
-      border-radius: 4px; font-weight: 600;
+    .attendees {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      margin: 0.5em 0;
+      font-size: 0.9em;
     }
-    button.join { background: #28a745; color: #fff; }
-    button.leave{ background: #dc3545; color: #fff; }
+    .stage-tag {
+      position: absolute;
+      top: 0.3em;
+      right: 0.3em;
+      padding: 0.2em 0.6em;
+      font-size: 0.6em;           /* Adjust size here */
+      border: 2px solid #fff;      /* White border */
+      color: var(--text);          /* Match theme text color */
+      background: transparent;
+      border-radius: 20px;
+      white-space: nowrap;
+      font-weight: 300;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .attendee-tag {
+      padding: 0.2em 0.5em;
+      border-radius: 20px;
+      font-size: 0.7em;
+      white-space: nowrap;
+      display: inline-block;
+      border: 2px solid currentColor;     /* uses text color as border */
+      color: var(--text);                 /* text color based on theme */
+      background: transparent;
+      font-weight: 100;            /* no fill */
+    }
+
+
+    /* Light theme text */
+    body:not(.dark) {
+      --tag-text: #ffffff;
+    }
+
+    /* Dark theme text */
+    body.dark {
+      --tag-text: #000000;
+    }
+    .warning-icon { color: #e74c3c; font-size: 1em; }
+    /* Position the button top-right */
+    .card button.join,
+    .card button.leave {
+      position: absolute;
+      bottom: 0.6em;
+      right: 0.6em;
+      padding: 0.3em 0.8em;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    button.join {
+      background: transparent;
+      border: 2.5px solid #28a745;
+      color: var(--text);
+    }
+
+    button.leave {
+      background: transparent;
+      border: 2.5px solid #dc3545;
+      color: var(--text);
+    }
+    body:not(.dark) #logo-title img {filter: invert(1)};
   </style>
 </head>
-<body class="dark">
-  <h2>B4L Lineup Planner</h2>
-  <div class="sticky-container">
-    <div id="tabs"></div>
-    <div id="controls">
-      <input id="nickname" placeholder="Your nickname">
-      <select id="filterSelect">
-        <option value="">All attendees</option>
-      </select>
-      <label class="switch">
-        <input type="checkbox" id="themeToggle" checked>
-        <span class="slider"></span>
-      </label>
+  <body class="dark">
+    <div id="page-wrapper">
+      <div id="logo-title">
+        <button id="menu-toggle">☰</button>
+        <img src="https://www.b4l.cz/wp-content/uploads/2024/09/logo_bfl_2024_25.svg" alt="B4L Lineup Planner" />
+        <h2>LINEUP PLANNER</h2>
+      </div>
+      <!-- Hamburger-controlled filters -->
+      <div id="menu-wrapper">
+        <div id="controls" class="collapsed">
+          <input id="nickname" placeholder="Your nickname">
+          <select id="filterSelect"><option value="">All attendees</option></select>
+          <select id="stageSelect"><option value="">All stages</option></select>
+          <div class="theme-toggle">
+            </label>
+              <span class="switch-label">Dark Mode</span>
+            <label class="switch">
+              <input type="checkbox" id="themeToggle" checked>
+              <span class="slider"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs stay sticky at the top -->
+      <div id="tabs"></div>
+
+      <!-- The main schedule -->
+      <div id="schedule"></div>
+        <footer id="site-footer">
+          <p>
+            <strong>B4L Lineup Planner</strong> is a fun personal project that helps you explore the festival schedule, choose your favorite performances, and see which friends are attending. The current lineup is for the year <strong>2025</strong>.
+          </p>
+        </footer>
     </div>
-  </div>
-
-  <div id="schedule"></div>
-
   <script>
-    const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec'; // your /exec URL
-
+    const backend = 'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';
     let me = '', currentDay = '', latestData = [], overlapIds = [];
     const tabsEl = document.getElementById('tabs');
     const nickEl = document.getElementById('nickname');
     const filterEl = document.getElementById('filterSelect');
+    const stageEl = document.getElementById('stageSelect');
     const scheduleEl = document.getElementById('schedule');
     const themeToggle = document.getElementById('themeToggle');
 
@@ -138,121 +386,67 @@
       s.src = `${backend}?action=listDays&callback=renderTabs&nocache=${Date.now()}`;
       document.body.appendChild(s);
     }
-
     function renderTabs(days) {
       tabsEl.innerHTML = '';
       days.forEach((day, idx) => {
-        const btn = document.createElement('button');
-        btn.textContent = day;
-        btn.dataset.day = day;
-        if (idx === 0) { btn.classList.add('active'); currentDay = day; }
+        const btn = document.createElement('button'); btn.textContent = day;
+        btn.dataset.day = day; if (idx === 0) { btn.classList.add('active'); currentDay = day; }
         btn.addEventListener('click', () => {
-          document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentDay = day;
-          loadSchedule();
-        });
-        tabsEl.appendChild(btn);
-      });
-      loadSchedule();
+          document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentDay = day; loadSchedule();
+        }); tabsEl.appendChild(btn);
+      }); loadSchedule();
     }
-
-    nickEl.addEventListener('change', () => { me = nickEl.value.trim(); render(latestData); });
-    filterEl.addEventListener('change', () => render(latestData));
-
-    function loadSchedule() {
-      scheduleEl.innerHTML = '<div class="loading">Loading…</div>';
-      const s = document.createElement('script');
-      s.src = `${backend}`
-            + `?day=${encodeURIComponent(currentDay)}`
-            + `&callback=gotData&nocache=${Date.now()}`;
-      document.body.appendChild(s);
-    }
-
-    function gotData(data) {
-      latestData = data;
-      computeOverlaps();
-      populateFilterOptions(data);
-      render(data);
-    }
-
-    function computeOverlaps() {
-      overlapIds = [];
-      if (!me) return;
-      const items = latestData.filter(item =>
-        (item.Attendees||'').split(',').map(s=>s.trim()).includes(me)
-      );
-      const times = items.map(item => {
-        const [start, end] = item.Time.split('–').map(s=>s.trim());
-        const [hs, ms] = start.split(':').map(Number);
-        const [he, meT] = end.split(':').map(Number);
-        return { id: item.rowIndex, start: hs*60+ms, end: he*60+meT };
-      }).sort((a,b)=>a.start-b.start);
-      for (let i=0; i<times.length; i++) {
-        for (let j=i+1; j<times.length; j++) {
-          if (times[j].start < times[i].end) {
-            overlapIds.push(times[i].id, times[j].id);
-          }
-        }
+    [nickEl, filterEl, stageEl].forEach(el => el.addEventListener('change', () => render(latestData)));
+    function loadSchedule() { scheduleEl.innerHTML = '<div class="loading">Loading…</div>'; const s = document.createElement('script'); s.src = `${backend}?day=${encodeURIComponent(currentDay)}&callback=gotData&nocache=${Date.now()}`; document.body.appendChild(s); }
+    function hashStringToHSL(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
       }
-      overlapIds = Array.from(new Set(overlapIds));
+      const hue = Math.abs(hash) % 360;
+      return `hsl(${hue}, 65%, 55%)`; // you can tweak saturation & lightness
     }
+    const colorPalette = [
+      '#e57373', '#81c784', '#64b5f6', '#ffd54f', '#ba68c8', '#4db6ac',
+      '#f06292', '#7986cb', '#4fc3f7', '#ff8a65', '#a1887f', '#7f85c7'
+    ];
+    const attendeeColors = {};
 
-    function populateFilterOptions(data) {
-      const names = new Set();
-      data.forEach(item =>
-        (item.Attendees||'').split(',').map(s=>s.trim()).forEach(n=>n&&names.add(n))
-      );
-      filterEl.innerHTML = '<option value="">All attendees</option>';
-      Array.from(names).sort().forEach(n => {
-        const opt = document.createElement('option'); opt.value = n; opt.textContent = n;
-        filterEl.appendChild(opt);
-      });
+    function getColorForName(name) {
+      if (!attendeeColors[name]) {
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+          hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % colorPalette.length;
+        attendeeColors[name] = colorPalette[index];
+      }
+      return attendeeColors[name];
     }
+    function gotData(data) { latestData = data; computeOverlaps(); populateFilters(data); render(data); }
+    function computeOverlaps() { overlapIds = []; if (!me) return; const items = latestData.filter(item => (item.Attendees||'').split(',').map(s=>s.trim()).includes(me)); const times = items.map(item => { const [start, end] = item.Time.split('–').map(s=>s.trim()); const [hs, ms] = start.split(':').map(Number); const [he, meT] = end.split(':').map(Number); return { id: item.rowIndex, start: hs*60+ms, end: he*60+meT }; }).sort((a,b)=>a.start-b.start); for (let i=0;i<times.length;i++) for (let j=i+1;j<times.length;j++) { if (times[j].start < times[i].end) overlapIds.push(times[i].id, times[j].id); } overlapIds = Array.from(new Set(overlapIds)); }
+    function populateFilters(data) { const names = new Set(), stages = new Set(); data.forEach(item => { (item.Attendees||'').split(',').map(s=>s.trim()).forEach(n=>n&&names.add(n)); stages.add(item.Stage); }); filterEl.innerHTML = '<option value="">All attendees</option>'; Array.from(names).sort().forEach(n => filterEl.appendChild(new Option(n,n))); stageEl.innerHTML = '<option value="">All stages</option>'; Array.from(stages).sort().forEach(s => stageEl.appendChild(new Option(s,s))); }
+    function render(data) { scheduleEl.innerHTML = ''; const fname = filterEl.value, sname = stageEl.value; data.forEach(item => { const list = (item.Attendees||'').split(',').map(s=>s.trim()).filter(Boolean); if (fname && !list.includes(fname)) return; if (sname && item.Stage !== sname) return; const joined = me && list.includes(me); const card = document.createElement('div'); card.className='card'; if (item.Color) card.style.borderColor = item.Color; const warn = overlapIds.includes(item.rowIndex)?'<span class="warning-icon">⚠️</span>':''; card.innerHTML = `\
+          <div class="artist">
+            ${warn}${item.Artist}
+            <span class="stage-tag">${item.Stage}</span>
+          </div>
+          <div class="info"><span class="time">${item.Time}</span></div>
 
-    function render(data) {
-      scheduleEl.innerHTML = '';
-      const filterName = filterEl.value;
-      data.forEach(item => {
-        const list = (item.Attendees||'').split(',').map(s=>s.trim()).filter(Boolean);
-        if (filterName && !list.includes(filterName)) return;
-        const joined = me && list.includes(me);
-        const card = document.createElement('div'); card.className = 'card';
-        if (item.Color) card.style.borderLeftColor = item.Color;
-        const warn = overlapIds.includes(item.rowIndex)
-          ? '<span class="warning-icon" title="Time overlap">⚠️</span>' : '';
-        card.innerHTML = `
-          <div class="artist">${warn}${item.Artist}</div>
-          <div class="info">${item.Time} @ ${item.Stage}</div>
-          <div class="attendees">👥 ${list.length?list.join(', '):'No one yet'}</div>
-          <button class="${joined?'leave':'join'}" onclick="toggle(${item.rowIndex}, event)">
-            ${joined?'Leave':'Join'}
-          </button>`;
-        scheduleEl.appendChild(card);
-      });
-    }
+          <div class="attendees">
+            ${list.length ? list.map(name => `<span class="attendee-tag" style="border-color: ${getColorForName(name)}">${name}</span>`).join('') : '⭕ No one yet'}
+          </div>
+          <button class="${joined?'leave':'join'}" onclick="toggle(${item.rowIndex},event)">\
+            ${joined?'Leave':'Join'}\
+          </button>`; scheduleEl.appendChild(card); }); }
+    function toggle(row, ev) { if (!me) return alert('Enter your nickname first in ☰ -> Your nickname'); const btn=ev.currentTarget; btn.disabled=true; const orig=btn.textContent; btn.textContent='⏳'; const s=document.createElement('script'); s.src = `${backend}?action=toggle&day=${encodeURIComponent(currentDay)}&rowIndex=${row}&nickname=${encodeURIComponent(me)}&callback=gotData`; document.body.appendChild(s); setTimeout(() => { if (btn.disabled) { btn.disabled=false; btn.textContent=orig; } },5000); }
+    themeToggle.addEventListener('change', ()=> document.body.classList.toggle('dark', themeToggle.checked)); initTabs();
+    const menuToggle = document.getElementById('menu-toggle');
+    const controls = document.getElementById('controls');
 
-    function toggle(row, ev) {
-      if (!me) return alert('Please enter your nickname first.');
-      const btn = ev.currentTarget; btn.disabled=true; const orig = btn.textContent; btn.textContent='⏳';
-      const s = document.createElement('script');
-      s.src = `${backend}`
-            + `?action=toggle`
-            + `&day=${encodeURIComponent(currentDay)}`
-            + `&rowIndex=${row}`
-            + `&nickname=${encodeURIComponent(me)}`
-            + `&callback=gotData`;
-      document.body.appendChild(s);
-      setTimeout(() => { if (btn.disabled) { btn.disabled = false; btn.textContent = orig; } }, 5000);
-    }
-
-    // Dark mode toggle listener
-    themeToggle.addEventListener('change', () => {
-      document.body.classList.toggle('dark', themeToggle.checked);
-    });
-
-    // Initialize
-    initTabs();
+    menuToggle.addEventListener('click', () => {
+      controls.classList.toggle('collapsed');
+});
   </script>
 </body>
 </html>
