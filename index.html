@@ -2,24 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Festival Planner</title>
+  <title>B4L Lineup Planner</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 1em; background: #f0f0f0; }
-    h2 { text-align: center; }
-    #tabs { display: flex; gap: 0.5em; justify-content: center; margin-bottom: 1em; flex-wrap: wrap; }
+    body { font-family: 'Poppins', sans-serif; margin: 0; padding: 1em; background: #f0f0f0; }
+    h2 { text-align: center; margin-bottom: 0.5em; }
+    .sticky-container {
+      position: sticky; top: 0; background: #f0f0f0;
+      padding-bottom: 0.5em; z-index: 100;
+    }
+    #tabs { display: flex; gap: 0.5em; justify-content: center; margin-bottom: 0.5em; flex-wrap: wrap; }
     #tabs button {
-      padding: 0.5em 1em; border: none; border-radius: 4px;
-      background: #ddd; cursor: pointer;
+      padding: 0.6em 1.2em; border: none; border-radius: 4px;
+      background: #ddd; cursor: pointer; font-weight: 600;
     }
     #tabs button.active { background: #007bff; color: #fff; }
     #controls {
-      display: flex; gap: 0.5em; flex-wrap: wrap; margin-bottom: 1em;
+      display: flex; gap: 0.5em; flex-wrap: wrap; margin-bottom: 0.5em;
       justify-content: center;
     }
     #nickname, #filterSelect {
-      padding: 0.5em; font-size: 1em; border-radius: 4px; border: 1px solid #ccc;
+      padding: 0.6em; font-size: 1em; border-radius: 4px; border: 1px solid #ccc;
       width: 200px;
+    }
+    #warning {
+      text-align: center; color: #fff; background: #e74c3c;
+      padding: 0.5em; margin-bottom: 0.5em; display: none;
+      border-radius: 4px;
     }
     .loading { text-align: center; color: #666; margin: 1em 0; }
     .card {
@@ -32,20 +43,25 @@
     .artist { font-size: 1.2em; font-weight: bold; }
     .info    { color: #555; margin: 0.5em 0; }
     .attendees { color: #333; font-size: 0.9em; margin: 0.5em 0; }
-    button.join { background: #28a745; color: #fff; border-radius: 4px; padding: 0.3em 0.8em; }
-    button.leave{ background: #dc3545; color: #fff; border-radius: 4px; padding: 0.3em 0.8em; }
+    button.join, button.leave {
+      padding: 0.6em 1.2em; font-size: 1em; cursor: pointer;
+      border: none; border-radius: 4px; font-weight: 600;
+    }
+    button.join { background: #28a745; color: #fff; }
+    button.leave{ background: #dc3545; color: #fff; }
   </style>
 </head>
 <body>
-  <h2>🎵 Festival Signup</h2>
-
-  <div id="tabs"></div>
-
-  <div id="controls">
-    <input id="nickname" placeholder="Your nickname">
-    <select id="filterSelect">
-      <option value="">All attendees</option>
-    </select>
+  <h2>B4L Lineup Planner</h2>
+  <div class="sticky-container">
+    <div id="tabs"></div>
+    <div id="controls">
+      <input id="nickname" placeholder="Your nickname">
+      <select id="filterSelect">
+        <option value="">All attendees</option>
+      </select>
+    </div>
+    <div id="warning"></div>
   </div>
 
   <div id="schedule"></div>
@@ -58,8 +74,8 @@
     const nickEl = document.getElementById('nickname');
     const filterEl = document.getElementById('filterSelect');
     const scheduleEl = document.getElementById('schedule');
+    const warnEl = document.getElementById('warning');
 
-    // Fetch sheet names and build tabs dynamically
     function initTabs() {
       const s = document.createElement('script');
       s.src = `${backend}?action=listDays&callback=renderTabs&nocache=${Date.now()}`;
@@ -84,11 +100,9 @@
       loadSchedule();
     }
 
-    // Nickname and filter handlers
     nickEl.addEventListener('change', () => render(latestData));
     filterEl.addEventListener('change', () => render(latestData));
 
-    // Load schedule for currentDay
     function loadSchedule() {
       scheduleEl.innerHTML = '<div class="loading">Loading…</div>';
       const s = document.createElement('script');
@@ -102,12 +116,14 @@
       latestData = data;
       populateFilterOptions(data);
       render(data);
+      checkOverlap();
     }
 
-    // Populate filter dropdown
     function populateFilterOptions(data) {
       const names = new Set();
-      data.forEach(item => (item.Attendees||'').split(',').map(s=>s.trim()).forEach(n=>n&&names.add(n)));
+      data.forEach(item =>
+        (item.Attendees||'').split(',').map(s=>s.trim()).forEach(n=>n&&names.add(n))
+      );
       filterEl.innerHTML = '<option value="">All attendees</option>';
       Array.from(names).sort().forEach(n => {
         const opt = document.createElement('option'); opt.value=n; opt.textContent=n;
@@ -115,9 +131,9 @@
       });
     }
 
-    // Render cards
     function render(data) {
       scheduleEl.innerHTML = '';
+      warnEl.style.display = 'none';
       const filterName = filterEl.value;
       const nick = nickEl.value.trim();
       data.forEach(item => {
@@ -137,11 +153,41 @@
       });
     }
 
-    // Toggle attendance
+    function parseTime(str) {
+      const [start, end] = str.split('–').map(s=>s.trim());
+      const [hs, ms] = start.split(':').map(Number);
+      const [he, me] = end.split(':').map(Number);
+      return { start: hs*60+ms, end: he*60+me };
+    }
+
+    function checkOverlap() {
+      const nick = nickEl.value.trim();
+      if (!nick) return;
+      const joinedItems = latestData.filter(item =>
+        (item.Attendees||'').split(',').map(s=>s.trim()).includes(nick)
+      );
+      const times = joinedItems.map(item => ({
+        name: item.Artist,
+        ...parseTime(item.Time)
+      })).sort((a,b)=>a.start - b.start);
+      const overlaps = [];
+      for (let i = 0; i < times.length; i++) {
+        for (let j = i+1; j < times.length; j++) {
+          if (times[j].start < times[i].end) {
+            overlaps.push(`${times[i].name} & ${times[j].name}`);
+          }
+        }
+      }
+      if (overlaps.length) {
+        warnEl.textContent = `⚠️ Overlap: ${[...new Set(overlaps)].join('; ')}`;
+        warnEl.style.display = 'block';
+      }
+    }
+
     function toggle(row, ev) {
       const nick = nickEl.value.trim();
       if (!nick) return alert('Please enter your nickname first.');
-      const btn = ev.currentTarget; btn.disabled=true; const orig=btn.textContent; btn.textContent='⏳';
+      const btn = ev.currentTarget; btn.disabled=true; const orig = btn.textContent; btn.textContent='⏳';
       const s = document.createElement('script');
       s.src = `${backend}`
             + `?action=toggle`
