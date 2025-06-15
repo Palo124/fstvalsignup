@@ -2,65 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Festival Planner</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body { font-family: sans-serif; padding: 1em; background: #f8f8f8; }
-    .card { background: white; padding: 1em; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 1em; }
+    body { font-family: sans-serif; padding: 1em; background: #f0f0f0; }
+    h2 { text-align: center; }
+    #nickname { width: 100%; padding: 0.5em; margin: 1em 0; font-size: 1em; }
+    .card {
+      background: #fff; border-radius: 8px; padding: 1em; margin-bottom: 1em;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
     .artist { font-size: 1.2em; font-weight: bold; }
-    .info { color: #666; margin-bottom: 0.5em; }
-    .attendees { font-size: 0.9em; color: #333; }
-    button { padding: 0.5em 1em; border: none; border-radius: 5px; background: #007bff; color: white; cursor: pointer; }
-    button.leave { background: #dc3545; }
+    .info    { color: #555; margin: 0.5em 0; }
+    .attendees { margin: 0.5em 0; font-size: 0.9em; color: #333; }
+    button {
+      padding: 0.5em 1em; border: none; border-radius: 4px;
+      font-size: 0.9em; cursor: pointer;
+    }
+    .join  { background: #28a745; color: white; }
+    .leave { background: #dc3545; color: white; }
   </style>
 </head>
 <body>
-  <h2>🎵 Festival Schedule</h2>
-  <input id="nickname" placeholder="Enter your name" style="width: 100%; padding: 0.5em; margin: 1em 0;" />
+  <h2>🎵 Festival Signup</h2>
+  <input id="nickname" placeholder="Enter your nickname" />
+
   <div id="schedule"></div>
 
   <script>
-    const backendUrl = "https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec";
-    let nickname = "";
+    // ← REPLACE this with your deployed Apps Script Web App URL (no extra path than /exec)
+    const backend = 'Phttps://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';
 
-    document.getElementById("nickname").addEventListener("change", (e) => {
-      nickname = e.target.value.trim();
-    });
+    let me = '';
+    document.getElementById('nickname')
+      .addEventListener('change', e => {
+        me = e.target.value.trim();
+        loadSchedule();
+      });
 
-    async function loadSchedule() {
-      const res = await fetch(backendUrl);
-      const data = await res.json();
-      const container = document.getElementById("schedule");
-      container.innerHTML = "";
+    // Load via JSONP
+    function loadSchedule() {
+      const script = document.createElement('script');
+      script.src = `${backend}?callback=render&nocache=${Date.now()}`;
+      document.body.appendChild(script);
+    }
 
+    // Called by JSONP to render the cards
+    function render(data) {
+      const container = document.getElementById('schedule');
+      container.innerHTML = '';
       data.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
-        const attendees = item.Attendees ? item.Attendees.split(",").map(s => s.trim()) : [];
-        const joined = attendees.includes(nickname);
+        const names  = (item.Attendees || '').split(',').map(s=>s.trim()).filter(Boolean);
+        const joined = me && names.includes(me);
 
+        const card = document.createElement('div');
+        card.className = 'card';
         card.innerHTML = `
           <div class="artist">${item.Artist}</div>
           <div class="info">${item.Time} @ ${item.Stage}</div>
-          <div class="attendees">👥 ${attendees.length ? attendees.join(", ") : "No one yet"}</div>
-          <button class="${joined ? 'leave' : ''}" onclick='toggleJoin(${item.rowIndex}, this)'>${joined ? "Leave" : "Join"}</button>
+          <div class="attendees">👥 ${names.length ? names.join(', ') : 'No one yet'}</div>
+          <button class="${joined ? 'leave' : 'join'}"
+                  onclick="toggle(${item.rowIndex})">
+            ${ joined ? 'Leave' : 'Join' }
+          </button>
         `;
         container.appendChild(card);
       });
     }
 
-    async function toggleJoin(rowIndex, btn) {
-      if (!nickname) return alert("Enter your nickname first");
-
-      btn.disabled = true;
-      await fetch(backendUrl, {
-        method: "POST",
-        body: JSON.stringify({ rowIndex, nickname }),
-        headers: { "Content-Type": "application/json" }
-      });
-      await loadSchedule();
+    // Toggle by injecting a JSONP request
+    function toggle(row) {
+      if (!me) return alert('Please enter your nickname first.');
+      const script = document.createElement('script');
+      script.src = `${backend}`
+        + `?action=toggle`
+        + `&rowIndex=${row}`
+        + `&nickname=${encodeURIComponent(me)}`
+        + `&callback=loadSchedule`;
+      document.body.appendChild(script);
     }
 
+    // Initial load (will show “No nickname” until you set one)
     loadSchedule();
   </script>
 </body>
