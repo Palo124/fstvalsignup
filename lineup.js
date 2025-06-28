@@ -260,13 +260,14 @@ rows.forEach(row => {
   const { it, list, isNow, isCol, start, end } = row;
     const card = document.createElement('div');
     card.className = 'card';
+    if (isNow && pinNow) {
+    card.classList.add('now-playing');
+    card.dataset.ends = end.getTime(); // For countdown later
+    }
     if (isNow) {
     card.classList.add('now-playing');
     card.style.borderColor = '#f1c40f';
-    if (pinNow) {
-        card.dataset.ends = end.getTime();
-    }
-    }else if (it.Color) {
+    } else if (it.Color) {
     card.style.borderColor = it.Color;
     }
     if (isCol) card.classList.add('has-collision');
@@ -348,41 +349,5 @@ document.getElementById('menu-toggle').addEventListener('click', () => {
 document.getElementById('controls').classList.toggle('collapsed');
 });
 
-function updateNowPlayingCountdowns() {
-  const shrink = window.scrollY > 100;
-
-  document.querySelectorAll('.now-playing').forEach(el => {
-    // compute countdown label
-    const endMs = parseInt(el.dataset.ends, 10);
-    const secs  = Math.max(0, Math.floor((endMs - Date.now())/1000));
-    const label = `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
-
-    if (shrink) {
-      // on first shrink, stash full markup
-      if (!el.dataset.full) {
-        el.dataset.full = el.innerHTML;
-      }
-      // apply shrink class
-      el.classList.add('pinned-shrink');
-      // render only artist + countdown
-      const artist = el.querySelector('.artist-name')?.textContent || '';
-      el.innerHTML = `
-        <div class="artist-name">${artist}</div>
-        <div class="countdown">${label}</div>
-      `;
-    } else {
-      // expand back
-      if (el.dataset.full) {
-        el.innerHTML = el.dataset.full;
-        delete el.dataset.full;
-      }
-      el.classList.remove('pinned-shrink');
-    }
-  });
-}
-
-// wire up
-window.addEventListener('scroll', updateNowPlayingCountdowns);
-setInterval(updateNowPlayingCountdowns, 1000);
 /* ──────────────────── GO ──────────────────── */
 init();
