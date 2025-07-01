@@ -9,7 +9,7 @@ let overlapIds = [];
 
 /* Map visible day labels → real ISO dates */
 const dayToDate = {
-'Streda 2.7.': '2025-06-28',
+'Streda 2.7.': '2025-07-02',
 'Štvrtok 3.7.': '2025-07-03',
 'Piatok 4.7.': '2025-07-04',
 'Sobota 5.7.': '2025-07-05'
