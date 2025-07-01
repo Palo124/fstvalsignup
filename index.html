@@ -9,7 +9,7 @@
   <style>
     :root {
       --bg: #ffffff;
-      --text: #333;
+      --text: #000000;
       --card-bg: #fff;
       --card-hover: #fafafa;
       --tab-bg: #ddd;
@@ -451,7 +451,13 @@
     }
   </style>
 </head>
-  <body class="dark">
+    <body>
+    <script>
+      const storedTheme = localStorage.getItem('themeDark');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const useDark = storedTheme === null ? prefersDark : JSON.parse(storedTheme);
+      if (useDark) document.body.classList.add('dark');
+    </script>
     <div id="page-wrapper">
       <div id="logo-title">
         <button id="menu-toggle">☰</button>

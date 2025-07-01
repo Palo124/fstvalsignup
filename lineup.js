@@ -53,7 +53,11 @@ localStorage.setItem('nickname', me);
 /* ──────────────────── INIT ──────────────────── */
 function init() {
 /* restore UI state */
-themeToggle.checked     = loadJSON('themeDark', true);
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const storedTheme = localStorage.getItem('themeDark');
+themeToggle.checked     = storedTheme === null
+    ? prefersDark
+    : JSON.parse(storedTheme);
 document.body.classList.toggle('dark', themeToggle.checked);
 
 collisionToggle.checked = loadJSON('filterOverlaps', false);
@@ -342,6 +346,14 @@ pinToggle      .addEventListener('change', () => render(latestData));
 themeToggle.addEventListener('change', () => {
 document.body.classList.toggle('dark', themeToggle.checked);
 saveJSON('themeDark', themeToggle.checked);
+});
+
+/* system theme changes */
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (localStorage.getItem('themeDark') === null) {
+        themeToggle.checked = e.matches;
+        document.body.classList.toggle('dark', e.matches);
+    }
 });
 
 /* hamburger */
