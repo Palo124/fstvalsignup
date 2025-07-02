@@ -24,6 +24,8 @@ const scheduleEl  = document.getElementById('schedule');
 const themeToggle = document.getElementById('themeToggle');
 const collisionToggle = document.getElementById('collisionToggle');
 const pinToggle       = document.getElementById('pinToggle');
+const pastToggle = document.getElementById('pastToggle');
+
 
 /* ──────────────────── LOCAL-STORAGE HELPERS ──────────────────── */
 function saveJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
@@ -71,8 +73,11 @@ function init() {
   const pref = currentPref();          // "auto" | "dark"
   themeToggle.checked = pref === "dark";
   applyTheme(pref);
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-document.body.classList.toggle('dark', themeToggle.checked);
+pastToggle.checked = loadJSON('dimPastShows', true);
+pastToggle.addEventListener('change', () => {
+  saveJSON('dimPastShows', pastToggle.checked);
+  render(latestData);
+});
 
 collisionToggle.checked = loadJSON('filterOverlaps', false);
 pinToggle.checked       = loadJSON('pinNowPlaying',   false);
@@ -194,6 +199,7 @@ saveJSON('filterOverlaps',  overlapsOnly);
 saveJSON('pinNowPlaying',   pinNow);
 
 
+
 /* helper */
 const mins = t => {
     const [h, m] = t.split(':').map(Number);
@@ -212,6 +218,7 @@ return aAdjusted - bAdjusted;
 });
 
 const nowMs = Date.now();
+const dimPast = pastToggle.checked;
 const first = [];
 const rest  = [];
 
@@ -274,10 +281,21 @@ rows.forEach(row => {
     scheduleEl.appendChild(divider);
     return;
   }
-
-  const { it, list, isNow, isCol, start, end } = row;
+    const { it, list, isNow, isCol, start, end } = row;
+    const isPast = nowMs >= end;
     const card = document.createElement('div');
     card.className = 'card';
+
+    if (isPast && dimPast) {
+    card.classList.add('past-show');
+    card.innerHTML = `
+    <div class="past-row">
+        <span class="artist-name">${it.Artist}</span>
+        <span class="time">${it.Time}</span>
+    </div>`;
+    scheduleEl.appendChild(card);
+    return;                     // skip the full template
+    }
     if (isNow && pinNow) {
     card.classList.add('now-playing');
     card.dataset.ends = end.getTime(); // For countdown later

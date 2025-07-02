@@ -265,7 +265,7 @@
     .artist {
       position: relative;
       top: 0.4em;
-      font-size: 1.1em;
+      font-size: 1.15em;
       font-weight: bold;
       display: flex;
       line-height: 1.4;
@@ -284,8 +284,8 @@
     }
     .stage-tag {
       position: absolute;
-      top: 0.4em;
-      right: 0.5em;
+      top: 0.6em;
+      right: 0.8em;
       padding: 0.4em 0.8em;
       font-size: 0.6em;
       border: 2px solid var(--text);
@@ -348,6 +348,53 @@
       display: inline-flex;   /* lay its children out in a row */
       gap: 0.4em;             /* spacing between them, only applied if both exist */
       z-index: 1;             /* underneath the stage-tag which is z-index:2 */
+    }
+    /* ⬤ ultra-compact visual for past shows */
+    .past-show {
+      opacity: 0.55;
+      filter: grayscale(60%);
+      pointer-events: none;
+      flex-wrap: nowrap;
+
+      /* compact layout */
+      display: block;
+      align-items: center;
+      gap: 0.6em;
+      padding: 0.4em 0.6em;
+      border-radius: 14px;      /* inherits card’s border */
+      font-size: 0.85em;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* hide anything we might forget */
+    .past-show .tag-container,
+    .past-show .attendees,
+    .past-show .spotify-link,
+    .past-show button,
+    .past-show .progress-container { display: none !important; }
+
+    .past-show .stage-tag  { position: static; font-size: 0.7em; }
+    .past-show .past-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .past-show .artist-name {
+      font-weight: 1000;
+      white-space: nowrap;
+    }
+
+    .past-show .time {
+      position: absolute;
+      right: 0.01em;               /* matches .past-show horizontal padding */
+      top: 50%;
+      transform: translateY(-50%); /* vertical center */
+      font-size: 0.8em;
+      color: #888;
+      white-space: nowrap;
     }
 
     /* Dark theme text */
@@ -483,6 +530,15 @@
             <span class="switch-label">Pin now-playing</span>
             <label class="switch">
               <input type="checkbox" id="pinToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Past-shows toggle -->
+          <div class="theme-toggle">
+            <span class="switch-label">Dim past shows</span>
+            <label class="switch">
+              <input type="checkbox" id="pastToggle" checked>
               <span class="slider"></span>
             </label>
           </div>
