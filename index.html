@@ -15,7 +15,7 @@
       --tab-bg: #ddd;
       --tab-active-bg: #007bff;
       --tab-active-text: #fff;
-      --control-border: #ccc;
+      --control-border: #e4e4e4;
       --switch-bg: #ccc;
       --switch-knob: #fff;
       --switch-bg-active: #007bff;
@@ -31,7 +31,7 @@
       --tab-bg: #444;
       --tab-active-bg: #555;
       --tab-active-text: #fff;
-      --control-border: #555;
+      --control-border: #444343;
       --switch-bg: #555;
       --switch-knob: #222;
       --switch-bg-active: #28a745;
@@ -49,7 +49,7 @@
     .time {
       font-size: 0.65em;
       padding: 0.05em 0.4em;
-      background: rgba(127,127,127,0.1);  /* light background */
+      background: var(--bg);  /* light background */
       border-radius: 20px;
       border: 2px solid var(--control-border);
       font-weight: 200;
@@ -426,7 +426,7 @@
     .progress-container {
       height: 6px;
       width: 100%;
-      background: rgba(255, 255, 255, 0.1);
+      background: var(--control-border);
       border-radius: 3px;
       overflow: hidden;
       margin-top: 1em;

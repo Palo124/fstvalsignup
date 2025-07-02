@@ -374,5 +374,10 @@ document.getElementById('menu-toggle').addEventListener('click', () => {
 document.getElementById('controls').classList.toggle('collapsed');
 });
 
+/* ───── “live” timer: re-evaluate every 30 s ───── */
+setInterval(() => {
+  if (!document.hidden) render(latestData);   // skip if tab is in the background
+}, 30_000);   // 30,000 ms = 30 s
+
 /* ──────────────────── GO ──────────────────── */
 init();
