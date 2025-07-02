@@ -451,12 +451,10 @@
     }
   </style>
 </head>
-    <body>
+  <body>
     <script>
-      const storedTheme = localStorage.getItem('themeDark');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const useDark = storedTheme === null ? prefersDark : JSON.parse(storedTheme);
-      if (useDark) document.body.classList.add('dark');
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.body.classList.add('dark');
     </script>
     <div id="page-wrapper">
       <div id="logo-title">

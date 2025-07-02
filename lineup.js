@@ -50,14 +50,28 @@ me = nickEl.value.trim();
 localStorage.setItem('nickname', me);
 });
 
+/* ──────── THEME HELPERS ──────── */
+function applyTheme(pref) {
+  // pref is "auto" | "dark"
+  if (pref === "dark") {
+    document.body.classList.add("dark");
+  } else {                             // "auto"
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.body.classList.toggle("dark", systemDark);
+  }
+}
+
+function currentPref() {
+  return localStorage.getItem("themePref") || "auto";
+}
+
 /* ──────────────────── INIT ──────────────────── */
 function init() {
-/* restore UI state */
+  /* restore UI state */
+  const pref = currentPref();          // "auto" | "dark"
+  themeToggle.checked = pref === "dark";
+  applyTheme(pref);
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-const storedTheme = localStorage.getItem('themeDark');
-themeToggle.checked     = storedTheme === null
-    ? prefersDark
-    : JSON.parse(storedTheme);
 document.body.classList.toggle('dark', themeToggle.checked);
 
 collisionToggle.checked = loadJSON('filterOverlaps', false);
@@ -178,7 +192,7 @@ saveJSON('filterAttendees', selNames);
 saveJSON('filterStages',    selStages);
 saveJSON('filterOverlaps',  overlapsOnly);
 saveJSON('pinNowPlaying',   pinNow);
-saveJSON('themeDark',       themeToggle.checked);
+
 
 /* helper */
 const mins = t => {
@@ -343,18 +357,17 @@ collisionToggle.addEventListener('change', () => render(latestData));
 pinToggle      .addEventListener('change', () => render(latestData));
 
 /* theme */
-themeToggle.addEventListener('change', () => {
-document.body.classList.toggle('dark', themeToggle.checked);
-saveJSON('themeDark', themeToggle.checked);
+themeToggle.addEventListener("change", () => {
+  const pref = themeToggle.checked ? "dark" : "auto";
+  localStorage.setItem("themePref", pref);
+  applyTheme(pref);
 });
 
 /* system theme changes */
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (localStorage.getItem('themeDark') === null) {
-        themeToggle.checked = e.matches;
-        document.body.classList.toggle('dark', e.matches);
-    }
-});
+window.matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", e => {
+        if (currentPref() === "auto") applyTheme("auto");
+      });
 
 /* hamburger */
 document.getElementById('menu-toggle').addEventListener('click', () => {
