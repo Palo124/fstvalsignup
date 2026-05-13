@@ -1,0 +1,489 @@
+:root {
+  --bg: #ffffff;
+  --text: #000000;
+  --card-bg: #fff;
+  --card-hover: #fafafa;
+  --tab-bg: #ddd;
+  --tab-active-bg: #007bff;
+  --tab-active-text: #fff;
+  --control-border: #e4e4e4;
+  --switch-bg: #ccc;
+  --switch-knob: #fff;
+  --switch-bg-active: #007bff;
+}
+
+body.dark {
+  --bg: #0c0c0c;
+  --text: #eee;
+  --card-bg: #000000;
+  --card-hover: #444;
+  --tab-bg: #444;
+  --tab-active-bg: #555;
+  --tab-active-text: #fff;
+  --control-border: #444343;
+  --switch-bg: #555;
+  --switch-knob: #222;
+  --switch-bg-active: #28a745;
+  --tag-text: #000000;
+}
+
+body:not(.dark) {
+  --tag-text: #ffffff;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 1em;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 0.5em;
+}
+
+select[multiple] {
+  height: 3em;
+}
+
+#tabs {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 0.4em 0;
+  margin-bottom: 0.5em;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: thin;
+}
+
+#tabs button {
+  background: transparent;
+  color: var(--text);
+  padding: 0.2em 0.6em;
+  border: none;
+  border-bottom: 2px solid transparent;
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.8em;
+  cursor: pointer;
+}
+
+#tabs button.active {
+  border-bottom-color: var(--tab-active-bg);
+  color: var(--tab-active-bg);
+}
+
+#logo-title {
+  position: relative;
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+#logo-title img {
+  max-width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto 0.5em;
+}
+
+#logo-title h2 {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1em;
+  color: var(--text);
+}
+
+#menu-toggle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 1.4em;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.3em 0.6em;
+  border-radius: 4px;
+}
+
+#controls {
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: 3em;
+  margin-bottom: 0.5em;
+}
+
+#controls.collapsed {
+  display: none;
+}
+
+#nickname,
+#filterSelect,
+#stageSelect {
+  padding: 0.6em 1em;
+  font-size: 0.95em;
+  border: 2px solid var(--control-border);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--text);
+  width: 200px;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+#nickname::placeholder {
+  color: var(--text);
+  opacity: 0.5;
+}
+
+#nickname:focus,
+#filterSelect:focus,
+#stageSelect:focus {
+  border-color: var(--tab-active-bg);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
+.theme-toggle,
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.switch-container {
+  gap: 0.3em;
+  font-size: 0.85em;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--switch-bg);
+  transition: 0.4s;
+  border-radius: 20px;
+}
+
+.slider::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: var(--switch-knob);
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background: var(--switch-bg-active);
+}
+
+input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+.loading {
+  text-align: center;
+  color: var(--text);
+  margin: 1em 0;
+}
+
+.card {
+  position: relative;
+  background: transparent;
+  padding: 0.6em;
+  margin-bottom: 1em;
+  border-radius: 20px;
+  border: 2px solid var(--control-border);
+  transition: border-color 0.2s;
+}
+
+.card:hover {
+  border-color: #ffffffcc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.artist {
+  position: relative;
+  top: 0.4em;
+  font-size: 1.15em;
+  font-weight: bold;
+  display: flex;
+  line-height: 1.4;
+  padding-right: 6em;
+  word-wrap: break-word;
+  flex-wrap: wrap;
+  gap: 0.4em;
+}
+
+.artist-name {
+  flex-basis: 100%;
+  font-weight: bold;
+}
+
+.time {
+  font-size: 0.65em;
+  padding: 0.05em 0.4em;
+  background: var(--bg);
+  border-radius: 20px;
+  border: 2px solid var(--control-border);
+  font-weight: 200;
+  margin-bottom: 1em;
+}
+
+.divider-line {
+  border: 0;
+  border-top: 2px solid #444;
+  margin: 1em 0;
+  opacity: 0.5;
+}
+
+.attendees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+
+.attendee-tag {
+  padding: 0.2em 0.5em;
+  border-radius: 20px;
+  font-size: 0.7em;
+  white-space: nowrap;
+  display: inline-block;
+  border: 2px solid currentColor;
+  color: var(--text);
+  background: transparent;
+  font-weight: 100;
+}
+
+.stage-tag {
+  position: absolute;
+  top: 0.6em;
+  right: 0.8em;
+  padding: 0.4em 0.8em;
+  font-size: 0.6em;
+  border: 2px solid var(--text);
+  color: var(--text);
+  background: transparent;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-weight: 300;
+  z-index: 2;
+}
+
+.tag-container {
+  position: absolute;
+  top: 0.4em;
+  left: 0.6em;
+  display: inline-flex;
+  gap: 0.4em;
+  z-index: 1;
+}
+
+.now-playing-tag,
+.collision-tag {
+  position: relative;
+  background-color: var(--card-bg);
+  color: var(--text);
+  font-size: 0.6em;
+  padding: 0.2em 0.6em;
+  border-radius: 20px;
+  z-index: 1;
+  font-weight: 200;
+}
+
+.now-playing-tag {
+  border: 2px solid #f1c40f;
+}
+
+.collision-tag {
+  border: 2px solid #e74c3c;
+}
+
+.warning-icon {
+  color: #e74c3c;
+  font-size: 1em;
+}
+
+.spotify-link {
+  margin-left: 0.05em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.spotify-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  fill: #1ed760;
+  transition: transform 0.2s;
+  margin-bottom: 0.6em;
+}
+
+.spotify-link:hover .spotify-icon {
+  transform: scale(1.2);
+}
+
+.card button.join,
+.card button.leave {
+  position: absolute;
+  bottom: 0.6em;
+  right: 0.6em;
+  padding: 0.3em 0.8em;
+  font-size: 1em;
+  cursor: pointer;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+button.join {
+  background: var(--card-bg);
+  border: 3px solid #28a745;
+  color: var(--text);
+}
+
+button.leave {
+  background: var(--card-bg);
+  border: 3px solid #dc3545;
+  color: var(--text);
+}
+
+.card.now-playing,
+.card.has-collision {
+  padding-top: 1.7em;
+}
+
+.card.now-playing {
+  border: 2.5px solid #f1c40f !important;
+}
+
+.progress-container {
+  height: 6px;
+  width: 100%;
+  background: var(--control-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  direction: rtl;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #ffc107;
+  transition: width 0.5s ease;
+}
+
+.past-show {
+  opacity: 0.55;
+  filter: grayscale(60%);
+  pointer-events: none;
+  flex-wrap: nowrap;
+  display: block;
+  gap: 0.6em;
+  padding: 0.4em 0.6em;
+  border-radius: 14px;
+  font-size: 0.85em;
+}
+
+.past-show .tag-container,
+.past-show .attendees,
+.past-show .spotify-link,
+.past-show button,
+.past-show .progress-container {
+  display: none !important;
+}
+
+.past-show .stage-tag {
+  position: static;
+  font-size: 0.7em;
+}
+
+.past-show .past-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.past-show .artist-name {
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+.past-show .time {
+  position: absolute;
+  right: 0.01em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8em;
+  color: #888;
+  white-space: nowrap;
+}
+
+#site-footer {
+  text-align: center;
+  padding: 2em 1em;
+  margin-top: 2em;
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text);
+  border-top: 1px solid var(--control-border);
+}
+
+body.dark #site-footer {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body:not(.dark) #logo-title img {
+  filter: invert(1);
+}
+
+@media (max-width: 600px) {
+  #controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #nickname,
+  #filterSelect,
+  #stageSelect {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .switch-container,
+  .theme-toggle {
+    justify-content: center;
+  }
+}
