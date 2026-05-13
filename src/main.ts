@@ -1,6 +1,7 @@
 import './styles.css';
 import { createLineupApi } from './api/lineupApi';
 import { config } from './config';
+import { calendarIsoDateForDayLabel, calendarIsoDateMapForDays } from './domain/festivalDayCalendar';
 import { allAttendees, allStages, normalizeScheduleRows, sortByScheduleTime } from './domain/schedule';
 import { computeOverlaps } from './domain/overlaps';
 import { createAppState } from './state/appState';
@@ -90,7 +91,7 @@ function renderCurrentSchedule(): void {
     filters: readFilters(elements),
     overlapIds: computeOverlaps(state.schedule, state.nickname),
     currentUser: state.nickname,
-    dayDate: config.dayToDate[state.currentDay],
+    dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
     timeZoneOffset: config.festivalTimeZoneOffset,
     preDawnCutoffMinutes: config.preDawnCutoffMinutes,
     pinNowPlaying: readPinNowPlaying(elements),
@@ -139,9 +140,15 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
 }
 
 function renderDayTabs(days: string[]): void {
-  renderTabs(elements.tabs, days, state.currentDay, (day) => {
-    void selectDay(day, days);
-  });
+  renderTabs(
+    elements.tabs,
+    days,
+    state.currentDay,
+    (day) => {
+      void selectDay(day, days);
+    },
+    { datesByDay: calendarIsoDateMapForDays(days, config.dayToDate) },
+  );
 }
 
 function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLElement } {

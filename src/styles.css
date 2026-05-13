@@ -62,7 +62,52 @@ select[multiple] {
   scrollbar-width: thin;
 }
 
-#tabs button {
+#tabs.tabs-grouped {
+  white-space: normal;
+  overflow-x: visible;
+}
+
+#tabs .tab-row {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 0.1em;
+  align-items: center;
+}
+
+#tabs .tab-year-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15em;
+  margin-bottom: 0.35em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid var(--control-border);
+}
+
+#tabs .year-tab {
+  background: var(--tab-bg);
+  color: var(--text);
+  padding: 0.25em 0.65em;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  font-weight: 700;
+  font-size: 0.78em;
+  cursor: pointer;
+}
+
+#tabs .year-tab.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+#tabs .tab-day-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1em;
+  align-items: center;
+  padding-top: 0.25em;
+}
+
+#tabs button.day-tab {
   background: transparent;
   color: var(--text);
   padding: 0.2em 0.6em;
@@ -74,7 +119,7 @@ select[multiple] {
   cursor: pointer;
 }
 
-#tabs button.active {
+#tabs button.day-tab.active {
   border-bottom-color: var(--tab-active-bg);
   color: var(--tab-active-bg);
 }
