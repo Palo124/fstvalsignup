@@ -3,7 +3,7 @@
 declare const self: ServiceWorkerGlobalScope;
 
 const DEFAULT_BACKEND =
-  'https://script.google.com/macros/s/AKfycbxLQgx0g9t1Uzq2PNOjU4YfiPA7Ny9Kcwd2N8rTbis5ZovL2QPzvclyox7IDx16Xt_-3g/exec';
+  'https://script.google.com/macros/s/AKfycbxPc4f-oCFmQSm9XJbs16PVD6Ld6EDB89EXO6_kZBgojAmqcfOS8vt0dK23XOOSXsMjoQ/exec';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
@@ -82,8 +82,10 @@ async function openApp(): Promise<void> {
 async function readStoredEndpoint(): Promise<string | null> {
   const cache = await caches.open('b4l-push');
   const response = await cache.match('push-endpoint');
-  if (!response) return null;
-  return response.text();
+  if (response) return response.text();
+
+  const subscription = await self.registration.pushManager.getSubscription();
+  return subscription?.endpoint ?? null;
 }
 
 async function fetchPendingNotifications(endpoint: string): Promise<PendingNotification[]> {

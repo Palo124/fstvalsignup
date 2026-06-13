@@ -18,7 +18,7 @@ import { getRequiredElement } from './ui/dom';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
 import { applyTheme, bindSystemTheme } from './ui/theme';
-import { registerServiceWorker, syncPushSubscription } from './push/notifications';
+import { pollPendingNotifications, registerServiceWorker, syncPushSubscription } from './push/notifications';
 import { loadJson, storageKeys } from './state/storage';
 import type { ScheduleItem } from './types/schedule';
 
@@ -35,6 +35,16 @@ bindSystemTheme(() => {
 });
 
 void registerServiceWorker();
+
+if (loadJson(storageKeys.notificationsEnabled, false)) {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) void pollPendingNotifications();
+  });
+  setInterval(() => {
+    if (!document.hidden) void pollPendingNotifications();
+  }, 60_000);
+  void pollPendingNotifications();
+}
 
 void bootstrap();
 

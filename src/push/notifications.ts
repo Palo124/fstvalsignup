@@ -166,6 +166,45 @@ export async function syncPushSubscription(nickname: string): Promise<void> {
   await savePushSubscription(nickname, payload, loadNotificationPreferences());
 }
 
+export async function pollPendingNotifications(): Promise<void> {
+  if (!loadJson(storageKeys.notificationsEnabled, false)) return;
+  if (Notification.permission !== 'granted') return;
+
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription?.endpoint) return;
+
+  const url = new URL(config.backendUrl);
+  url.searchParams.set('action', 'pendingNotifications');
+  url.searchParams.set('endpoint', subscription.endpoint);
+  url.searchParams.set('nocache', String(Date.now()));
+
+  const response = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!response.ok) return;
+
+  const payload = (await response.json()) as {
+    notifications?: Array<{ id: string; title: string; body: string; tag: string }>;
+  };
+  const notifications = payload.notifications ?? [];
+  if (!notifications.length) return;
+
+  for (const notification of notifications) {
+    await registration.showNotification(notification.title, {
+      body: notification.body,
+      tag: notification.tag,
+      icon: './apple-touch-icon.png',
+      badge: './favicon.png',
+    });
+  }
+
+  const ackUrl = new URL(config.backendUrl);
+  ackUrl.searchParams.set('action', 'ackNotifications');
+  ackUrl.searchParams.set('endpoint', subscription.endpoint);
+  ackUrl.searchParams.set('ids', notifications.map((item) => item.id).join(','));
+  ackUrl.searchParams.set('nocache', String(Date.now()));
+  await fetch(ackUrl, { headers: { Accept: 'application/json' } });
+}
+
 export function isPushSupported(): boolean {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
