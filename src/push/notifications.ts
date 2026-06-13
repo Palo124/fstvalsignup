@@ -49,15 +49,32 @@ export async function enablePushNotifications(nickname: string): Promise<void> {
     throw new Error('Service workers are not supported in this browser.');
   }
 
-  await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey) as BufferSource,
-  });
+  try {
+    await navigator.serviceWorker.ready;
+  } catch {
+    throw new Error('Service worker failed to load. Use the production build (npm run build) over HTTPS.');
+  }
+
+  let subscription: PushSubscription;
+  try {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey) as BufferSource,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Push subscription failed';
+    throw new Error(message);
+  }
 
   const payload = toSubscriptionPayload(subscription);
   await cachePushMetadata(payload.endpoint);
-  await savePushSubscription(nickname, payload, loadNotificationPreferences());
+  try {
+    await savePushSubscription(nickname, payload, loadNotificationPreferences());
+  } catch (error) {
+    await subscription.unsubscribe();
+    const message = error instanceof Error ? error.message : 'Could not save subscription to server';
+    throw new Error(message);
+  }
   saveJson(storageKeys.notificationsEnabled, true);
 }
 
@@ -84,26 +101,37 @@ async function savePushSubscription(
 ): Promise<void> {
   const url = new URL(config.backendUrl);
   url.searchParams.set('action', 'savePushSubscription');
+  url.searchParams.set('nickname', nickname);
+  url.searchParams.set('endpoint', subscription.endpoint);
+  url.searchParams.set('p256dh', subscription.keys.p256dh);
+  url.searchParams.set('auth', subscription.keys.auth);
+  url.searchParams.set('preferences', JSON.stringify(preferences));
+  url.searchParams.set('nocache', String(Date.now()));
 
   const response = await fetch(url, {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nickname, subscription, preferences }),
+    method: 'GET',
+    headers: { Accept: 'application/json' },
   });
 
   if (!response.ok) {
     throw new Error(`Failed to save push subscription: ${response.status}`);
+  }
+
+  const result = (await response.json()) as { ok?: boolean; error?: string };
+  if (result.error) {
+    throw new Error(result.error);
   }
 }
 
 async function removePushSubscription(endpoint: string): Promise<void> {
   const url = new URL(config.backendUrl);
   url.searchParams.set('action', 'removePushSubscription');
+  url.searchParams.set('endpoint', endpoint);
+  url.searchParams.set('nocache', String(Date.now()));
 
   await fetch(url, {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint }),
+    method: 'GET',
+    headers: { Accept: 'application/json' },
   });
 }
 

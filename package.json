@@ -11,7 +11,7 @@
     "gas:build": "node scripts/build-gas-webpush.mjs",
     "gas:push": "npm run gas:build && clasp push",
     "gas:deploy": "npm run gas:push && clasp deploy --description \"Lineup planner API\"",
-    "gas:setup": "clasp run setupTriggers"
+    "gas:setup": "echo \"Run setupTriggers in the Apps Script editor (npx clasp open), or enable notifications in the app — the trigger installs automatically.\""
   },
   "devDependencies": {
     "elliptic": "^6.6.1",

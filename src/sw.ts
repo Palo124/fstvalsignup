@@ -104,12 +104,11 @@ async function ackNotifications(endpoint: string, ids: string[]): Promise<void> 
   const backendUrl = await readBackendUrl();
   const url = new URL(backendUrl);
   url.searchParams.set('action', 'ackNotifications');
+  url.searchParams.set('endpoint', endpoint);
+  url.searchParams.set('ids', ids.join(','));
+  url.searchParams.set('nocache', String(Date.now()));
 
-  await fetch(url, {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint, ids }),
-  });
+  await fetch(url, { headers: { Accept: 'application/json' } });
 }
 
 async function readBackendUrl(): Promise<string> {
