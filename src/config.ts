@@ -1,7 +1,7 @@
 export const config = {
   backendUrl:
     import.meta.env.VITE_BACKEND_URL ??
-    'https://script.google.com/macros/s/AKfycbyDjtFKK9SMN3PtM6gidPFGeE8LKr9N0-p_WwRXGzJXIx9w763SO24xfMK5QoSOaHVakg/exec',
+    'https://script.google.com/macros/s/AKfycbxLQgx0g9t1Uzq2PNOjU4YfiPA7Ny9Kcwd2N8rTbis5ZovL2QPzvclyox7IDx16Xt_-3g/exec',
   vapidPublicKey:
     import.meta.env.VITE_VAPID_PUBLIC_KEY ??
     'BIMRXGq1T4ofojR84NQKSnrZ_smcyID7njPtt0HQH-vc7YiuJrfV3Aa_3jA4DA6uXQZFWN1fjFD-ae3YxpiMcUI',
