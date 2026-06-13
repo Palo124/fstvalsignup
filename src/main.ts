@@ -89,7 +89,7 @@ function renderCurrentSchedule(): void {
     container: elements.schedule,
     items: state.schedule,
     filters: readFilters(elements),
-    overlapIds: computeOverlaps(state.schedule, state.nickname),
+    overlaps: computeOverlaps(state.schedule, state.nickname),
     currentUser: state.nickname,
     dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
     timeZoneOffset: config.festivalTimeZoneOffset,

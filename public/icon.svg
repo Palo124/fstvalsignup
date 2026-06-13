@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1239 1134" role="img" aria-label="B4L Lineup Planner">
+  <defs>
+    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#891758"/>
+      <stop offset="100%" stop-color="#ed297c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1239" height="1134" fill="#e5e5e5"/>
+  <rect x="145" y="266" width="87" height="379" rx="43.5" fill="url(#barGrad)"/>
+  <rect x="283" y="164" width="87" height="655" rx="43.5" fill="url(#barGrad)"/>
+  <rect x="420" y="174" width="88" height="760" rx="44" fill="url(#barGrad)"/>
+  <rect x="558" y="273" width="87" height="752" rx="43.5" fill="url(#barGrad)"/>
+  <rect x="696" y="170" width="87" height="763" rx="43.5" fill="url(#barGrad)"/>
+  <rect x="833" y="170" width="87" height="649" rx="43.5" fill="url(#barGrad)"/>
+  <rect x="971" y="273" width="87" height="367" rx="43.5" fill="url(#barGrad)"/>
+</svg>

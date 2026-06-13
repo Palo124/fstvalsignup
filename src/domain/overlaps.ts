@@ -1,28 +1,54 @@
 import type { ScheduleItem } from '../types/schedule';
 
-export function computeOverlaps(items: ScheduleItem[], nickname: string): Set<number> {
+export interface OverlapPartner {
+  id: number;
+  artist: string;
+  stage: string;
+  timeLabel: string;
+}
+
+export type OverlapMap = Map<number, OverlapPartner[]>;
+
+export function computeOverlaps(items: ScheduleItem[], nickname: string): OverlapMap {
   const normalizedNickname = nickname.trim();
-  if (!normalizedNickname) return new Set();
+  const overlaps: OverlapMap = new Map();
+  if (!normalizedNickname) return overlaps;
 
-  const ranges = items
+  const attending = items
     .filter((item) => item.attendees.includes(normalizedNickname))
-    .map((item) => ({
-      id: item.id,
-      start: item.time.startMinutes,
-      end: item.time.endMinutes,
-    }))
-    .sort((left, right) => left.start - right.start);
+    .sort((left, right) => left.time.startMinutes - right.time.startMinutes);
 
-  const overlapping = new Set<number>();
+  for (let i = 0; i < attending.length; i += 1) {
+    for (let j = i + 1; j < attending.length; j += 1) {
+      if (attending[j].time.startMinutes >= attending[i].time.endMinutes) break;
 
-  for (let i = 0; i < ranges.length; i += 1) {
-    for (let j = i + 1; j < ranges.length; j += 1) {
-      if (ranges[j].start >= ranges[i].end) break;
-
-      overlapping.add(ranges[i].id);
-      overlapping.add(ranges[j].id);
+      addOverlap(overlaps, attending[i], attending[j]);
     }
   }
 
-  return overlapping;
+  return overlaps;
+}
+
+function addOverlap(overlaps: OverlapMap, left: ScheduleItem, right: ScheduleItem): void {
+  appendPartner(overlaps, left.id, toPartner(right));
+  appendPartner(overlaps, right.id, toPartner(left));
+}
+
+function appendPartner(overlaps: OverlapMap, id: number, partner: OverlapPartner): void {
+  const existing = overlaps.get(id);
+  if (existing) {
+    existing.push(partner);
+    return;
+  }
+
+  overlaps.set(id, [partner]);
+}
+
+function toPartner(item: ScheduleItem): OverlapPartner {
+  return {
+    id: item.id,
+    artist: item.artist,
+    stage: item.stage,
+    timeLabel: item.time.label,
+  };
 }

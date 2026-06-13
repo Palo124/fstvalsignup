@@ -1,9 +1,10 @@
+import type { OverlapMap } from '../domain/overlaps';
 import type { ScheduleFilters, ScheduleItem } from '../types/schedule';
 
 export function applyScheduleFilters(
   items: ScheduleItem[],
   filters: ScheduleFilters,
-  overlapIds: Set<number>,
+  overlaps: OverlapMap,
 ): ScheduleItem[] {
   return items.filter((item) => {
     if (filters.attendees.length > 0 && !filters.attendees.some((name) => item.attendees.includes(name))) {
@@ -14,7 +15,7 @@ export function applyScheduleFilters(
       return false;
     }
 
-    if (filters.overlapsOnly && !overlapIds.has(item.id)) {
+    if (filters.overlapsOnly && !overlaps.has(item.id)) {
       return false;
     }
 

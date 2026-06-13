@@ -1,5 +1,7 @@
+import { colorForStage } from '../stageColors';
 import { clear, textElement } from './dom';
 import { applyScheduleFilters } from '../domain/filters';
+import type { OverlapMap, OverlapPartner } from '../domain/overlaps';
 import { intervalDates, progressRemaining } from '../domain/time';
 import type { ScheduleFilters, ScheduleItem, ScheduleViewRow } from '../types/schedule';
 
@@ -7,7 +9,7 @@ interface RenderScheduleInput {
   container: HTMLElement;
   items: ScheduleItem[];
   filters: ScheduleFilters;
-  overlapIds: Set<number>;
+  overlaps: OverlapMap;
   currentUser: string;
   dayDate: string | undefined;
   timeZoneOffset: string;
@@ -53,7 +55,7 @@ export function renderSchedule(input: RenderScheduleInput): void {
     return;
   }
 
-  const filteredItems = applyScheduleFilters(input.items, input.filters, input.overlapIds);
+  const filteredItems = applyScheduleFilters(input.items, input.filters, input.overlaps);
   const rows = toViewRows(filteredItems, input);
 
   if (rows.length === 0) {
@@ -86,11 +88,14 @@ function toViewRows(items: ScheduleItem[], input: RenderScheduleInput): Schedule
     );
     const isNow = input.nowMs >= start.getTime() && input.nowMs < end.getTime();
 
+    const overlaps = input.overlaps.get(item.id) ?? [];
+
     return {
       item,
       isNow,
       isPast: input.nowMs >= end.getTime(),
-      hasOverlap: input.overlapIds.has(item.id),
+      overlaps,
+      hasOverlap: overlaps.length > 0,
       start,
       end,
     };
@@ -112,8 +117,11 @@ function renderCard(row: ScheduleViewRow, input: RenderScheduleInput): HTMLEleme
 
   if (row.isNow) {
     card.classList.add('now-playing');
-  } else if (row.item.color) {
-    card.style.borderColor = row.item.color;
+  } else {
+    const stageColor = colorForStage(row.item.stage);
+    if (stageColor) {
+      card.style.borderColor = stageColor;
+    }
   }
 
   if (row.hasOverlap) {
@@ -143,10 +151,27 @@ function renderTags(row: ScheduleViewRow): HTMLElement {
   }
 
   if (row.hasOverlap) {
-    container.appendChild(textElement('div', 'Warning: Collision', 'collision-tag'));
+    container.appendChild(renderCollisionTag(row.overlaps));
   }
 
   return container;
+}
+
+function renderCollisionTag(partners: OverlapPartner[]): HTMLElement {
+  const tag = document.createElement('div');
+  tag.className = 'collision-tag';
+  tag.textContent = formatCollisionLabel(partners);
+  return tag;
+}
+
+function formatCollisionLabel(partners: OverlapPartner[]): string {
+  if (partners.length === 1) {
+    const partner = partners[0];
+    return `Collides with ${partner.artist} (${partner.stage}, ${partner.timeLabel})`;
+  }
+
+  const details = partners.map((partner) => `${partner.artist} (${partner.stage}, ${partner.timeLabel})`);
+  return `Collides with: ${details.join('; ')}`;
 }
 
 function renderArtist(item: ScheduleItem): HTMLElement {

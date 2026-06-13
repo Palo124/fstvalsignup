@@ -1,10 +1,11 @@
+import type { OverlapPartner } from '../domain/overlaps';
+
 export interface RawScheduleRow {
   rowIndex?: unknown;
   Artist?: unknown;
   Stage?: unknown;
   Time?: unknown;
   Attendees?: unknown;
-  Color?: unknown;
 }
 
 export interface TimeRange {
@@ -19,13 +20,13 @@ export interface ScheduleItem {
   stage: string;
   time: TimeRange;
   attendees: string[];
-  color?: string;
 }
 
 export interface ScheduleViewRow {
   item: ScheduleItem;
   isNow: boolean;
   isPast: boolean;
+  overlaps: OverlapPartner[];
   hasOverlap: boolean;
   start: Date;
   end: Date;

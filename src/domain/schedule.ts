@@ -15,8 +15,6 @@ export function normalizeScheduleRows(rows: RawScheduleRow[]): ScheduleItem[] {
     const time = parseTimeRange(timeLabel);
     if (!time) return [];
 
-    const color = toOptionalString(row.Color);
-
     return [
       {
         id,
@@ -24,7 +22,6 @@ export function normalizeScheduleRows(rows: RawScheduleRow[]): ScheduleItem[] {
         stage,
         time,
         attendees: splitAttendees(row.Attendees),
-        ...(color ? { color } : {}),
       },
     ];
   });
@@ -67,6 +64,3 @@ function toNonEmptyString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function toOptionalString(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
-}

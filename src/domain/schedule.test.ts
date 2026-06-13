@@ -11,7 +11,6 @@ describe('normalizeScheduleRows', () => {
           Stage: 'Main',
           Time: '22:00–23:00',
           Attendees: 'Ada, Grace',
-          Color: '#fff',
         },
       ]),
     ).toEqual([
@@ -25,7 +24,6 @@ describe('normalizeScheduleRows', () => {
           endMinutes: 1380,
         },
         attendees: ['Ada', 'Grace'],
-        color: '#fff',
       },
     ]);
   });
