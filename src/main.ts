@@ -18,6 +18,8 @@ import { getRequiredElement } from './ui/dom';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
 import { applyTheme, bindSystemTheme } from './ui/theme';
+import { registerServiceWorker, syncPushSubscription } from './push/notifications';
+import { loadJson, storageKeys } from './state/storage';
 import type { ScheduleItem } from './types/schedule';
 
 const api = createLineupApi(config.backendUrl);
@@ -31,6 +33,8 @@ bindSystemTheme(() => {
     applyTheme('auto');
   }
 });
+
+void registerServiceWorker();
 
 void bootstrap();
 
@@ -77,6 +81,7 @@ async function loadSchedule(day: string): Promise<void> {
 
     populateFilterOptions(elements, allAttendees(state.schedule), allStages(state.schedule));
     renderCurrentSchedule();
+    void syncPushSubscription(readNickname(elements));
   } catch (error) {
     showError(elements.schedule, error);
   }
@@ -130,6 +135,9 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
     );
     populateFilterOptions(elements, allAttendees(state.schedule), allStages(state.schedule));
     renderCurrentSchedule();
+    if (loadJson(storageKeys.notificationsEnabled, false)) {
+      void syncPushSubscription(state.nickname);
+    }
   } catch (error) {
     showError(elements.schedule, error);
     if (button) {
@@ -162,6 +170,8 @@ function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLEl
     overlapsOnly: getRequiredElement('collisionToggle', HTMLInputElement),
     pinNow: getRequiredElement('pinToggle', HTMLInputElement),
     dimPast: getRequiredElement('pastToggle', HTMLInputElement),
+    notifications: getRequiredElement('notificationsToggle', HTMLInputElement),
+    notificationsHint: getRequiredElement('notifications-hint', HTMLElement),
     menuToggle: getRequiredElement('menu-toggle', HTMLButtonElement),
     controlsPanel,
     tabs: getRequiredElement('tabs', HTMLElement),

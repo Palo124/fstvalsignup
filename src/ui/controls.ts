@@ -1,6 +1,11 @@
 import { loadJson, loadString, loadThemePreference, saveJson, saveString, storageKeys } from '../state/storage';
 import type { ScheduleFilters } from '../types/schedule';
 import type { ThemePreference } from '../state/storage';
+import {
+  disablePushNotifications,
+  enablePushNotifications,
+  isPushSupported,
+} from '../push/notifications';
 
 export interface ControlsElements {
   nickname: HTMLInputElement;
@@ -10,6 +15,8 @@ export interface ControlsElements {
   overlapsOnly: HTMLInputElement;
   pinNow: HTMLInputElement;
   dimPast: HTMLInputElement;
+  notifications: HTMLInputElement;
+  notificationsHint: HTMLElement;
   menuToggle: HTMLButtonElement;
   controlsPanel: HTMLElement;
 }
@@ -30,6 +37,8 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   elements.overlapsOnly.checked = loadJson(storageKeys.filterOverlaps, false);
   elements.pinNow.checked = loadJson(storageKeys.pinNowPlaying, false);
   elements.dimPast.checked = loadJson(storageKeys.dimPastShows, true);
+  elements.notifications.checked = loadJson(storageKeys.notificationsEnabled, false);
+  configureNotificationsUi(elements);
 
   elements.nickname.addEventListener('input', () => {
     saveString(storageKeys.nickname, elements.nickname.value.trim());
@@ -65,6 +74,10 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
     const pref: ThemePreference = elements.theme.checked ? 'dark' : 'auto';
     saveString(storageKeys.themePref, pref);
     onThemeChange(pref);
+  });
+
+  elements.notifications.addEventListener('change', () => {
+    void handleNotificationsToggle(elements, onChange);
   });
 
   elements.menuToggle.addEventListener('click', () => {
@@ -126,4 +139,40 @@ function fillSelect(select: HTMLSelectElement, values: string[], storageKey: str
 
 function selectedValues(select: HTMLSelectElement): string[] {
   return Array.from(select.selectedOptions).map((option) => option.value);
+}
+
+function configureNotificationsUi(elements: ControlsElements): void {
+  const supported = isPushSupported();
+  elements.notifications.disabled = !supported;
+  elements.notificationsHint.hidden = supported;
+  if (!supported) {
+    elements.notifications.checked = false;
+  }
+}
+
+async function handleNotificationsToggle(elements: ControlsElements, onChange: () => void): Promise<void> {
+  const nickname = elements.nickname.value.trim();
+
+  if (elements.notifications.checked) {
+    try {
+      await enablePushNotifications(nickname);
+    } catch (error) {
+      elements.notifications.checked = false;
+      saveJson(storageKeys.notificationsEnabled, false);
+      const message = error instanceof Error ? error.message : 'Could not enable notifications.';
+      alert(message);
+      return;
+    }
+  } else {
+    try {
+      await disablePushNotifications();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not disable notifications.';
+      alert(message);
+      elements.notifications.checked = true;
+      return;
+    }
+  }
+
+  onChange();
 }

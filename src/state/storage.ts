@@ -8,6 +8,8 @@ export const storageKeys = {
   dimPastShows: 'dimPastShows',
   filterOverlaps: 'filterOverlaps',
   pinNowPlaying: 'pinNowPlaying',
+  notificationsEnabled: 'notificationsEnabled',
+  notificationPrefs: 'notificationPrefs',
 } as const;
 
 export function loadString(key: string, fallback = ''): string {
