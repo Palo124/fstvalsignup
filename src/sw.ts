@@ -3,7 +3,7 @@
 declare const self: ServiceWorkerGlobalScope;
 
 const DEFAULT_BACKEND =
-  'https://script.google.com/macros/s/AKfycby8Ikg95Fn4AKbKzHOdEBaNPNrISll8Z_PfrZs7hR5alJbMVkHybvguZY6d_tmSthA9bg/exec';
+  'https://script.google.com/macros/s/AKfycbwVjWy6K-z07eX3wYq7uCvYLwgrBFYyRPimhFqNC36VHS88cIcVb6s2r-yrY8sJXnQyOA/exec';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
