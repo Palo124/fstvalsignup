@@ -25,8 +25,14 @@ var WebPushLib = (function() {
 ${bundled.replace(/^var WebPushLib = /, '').replace(/;\s*$/, '')}
 })();
 
-function sendEmptyWebPush_(subscription, vapidPublicKey, vapidPrivateKey, subject) {
-  var request = WebPushLib.buildEmptyPushRequest(subscription, vapidPublicKey, vapidPrivateKey, subject || 'mailto:planner@b4l.local');
+function sendWebPush_(subscription, vapidPublicKey, vapidPrivateKey, payload, subject) {
+  var request = WebPushLib.buildPushRequest(
+    subscription,
+    vapidPublicKey,
+    vapidPrivateKey,
+    payload || null,
+    subject || 'mailto:planner@b4l.local',
+  );
   var headers = {};
   Object.keys(request.headers).forEach(function(key) {
     headers[key] = request.headers[key];
@@ -37,6 +43,10 @@ function sendEmptyWebPush_(subscription, vapidPublicKey, vapidPrivateKey, subjec
     payload: request.body,
     muteHttpExceptions: true,
   });
+}
+
+function sendEmptyWebPush_(subscription, vapidPublicKey, vapidPrivateKey, subject) {
+  return sendWebPush_(subscription, vapidPublicKey, vapidPrivateKey, null, subject);
 }
 `;
 

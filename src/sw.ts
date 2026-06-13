@@ -3,7 +3,7 @@
 declare const self: ServiceWorkerGlobalScope;
 
 const DEFAULT_BACKEND =
-  'https://script.google.com/macros/s/AKfycbxPc4f-oCFmQSm9XJbs16PVD6Ld6EDB89EXO6_kZBgojAmqcfOS8vt0dK23XOOSXsMjoQ/exec';
+  'https://script.google.com/macros/s/AKfycbxmGd0_jjD1znuizGRf-rbAqyAOTDobxbzURac4e-962J3WOyROaATc4qWYe7onsLfG6Q/exec';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
@@ -26,6 +26,8 @@ async function handlePush(event: PushEvent): Promise<void> {
   const data = parsePushData(event);
   if (data) {
     await showNotifications([data]);
+    const endpoint = await readStoredEndpoint();
+    if (endpoint) await ackNotifications(endpoint, [data.id]);
     return;
   }
 
