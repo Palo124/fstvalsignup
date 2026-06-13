@@ -121,6 +121,9 @@ async function savePushSubscription(
   if (result.error) {
     throw new Error(result.error);
   }
+  if (!result.ok) {
+    throw new Error('Server did not save the subscription. Deploy the latest Apps Script with npm run gas:deploy.');
+  }
 }
 
 async function removePushSubscription(endpoint: string): Promise<void> {
