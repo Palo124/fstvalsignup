@@ -16,7 +16,7 @@ import {
   type ControlsElements,
 } from './ui/controls';
 import { getRequiredElement } from './ui/dom';
-import { renderMySchedule } from './ui/myScheduleView';
+import { exitMyScheduleFullscreenIfActive, renderMySchedule } from './ui/myScheduleView';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
 import { renderViewTabs as renderAppViewTabs, type AppView } from './ui/viewTabs';
@@ -191,6 +191,10 @@ function navigateToLineupItem(item: ScheduleItem): void {
 }
 
 function selectView(view: AppView): void {
+  if (view !== 'my-schedule') {
+    exitMyScheduleFullscreenIfActive();
+  }
+
   currentView = view;
   renderViewTabs();
   renderCurrentView();

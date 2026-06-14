@@ -864,28 +864,75 @@ body:not(.dark) #logo-title img {
 }
 
 .my-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
   margin-top: 0.5em;
 }
 
-.my-schedule-legend {
-  margin: 0 0 0.75em;
-  font-size: 0.82em;
-  line-height: 1.4;
-  color: #666;
-  text-align: center;
+.my-schedule-toolbar {
+  display: flex;
+  justify-content: flex-end;
 }
 
-body.dark .my-schedule-legend {
-  color: #aaa;
+.my-schedule-fullscreen-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.my-schedule-fullscreen-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.my-schedule-fullscreen-toggle:hover {
+  border-color: var(--tab-active-bg);
 }
 
 .my-schedule-scroll {
   overflow: auto;
   overflow-anchor: none;
   overscroll-behavior: contain;
-  max-height: min(72vh, 900px);
+  max-height: min(45vh, 480px);
   border: 1px solid var(--control-border);
   border-radius: 12px;
+}
+
+.my-schedule:fullscreen,
+.my-schedule.my-schedule--expanded {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: max(0.75em, env(safe-area-inset-top)) max(0.75em, env(safe-area-inset-right))
+    max(0.75em, env(safe-area-inset-bottom)) max(0.75em, env(safe-area-inset-left));
+  background: var(--bg);
+}
+
+.my-schedule:fullscreen .my-schedule-scroll,
+.my-schedule.my-schedule--expanded .my-schedule-scroll {
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+}
+
+.my-schedule.my-schedule--expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  margin-top: 0;
+}
+
+body.my-schedule-expanded-open {
+  overflow: hidden;
 }
 
 .my-schedule-grid {
@@ -1047,7 +1094,7 @@ body.dark .my-schedule-free-window {
   font: inherit;
   color: inherit;
   background: transparent;
-  min-height: 28px;
+  min-height: 20px;
 }
 
 .my-schedule-block:hover {
