@@ -1,3 +1,4 @@
+import { defaultNotificationPreferences } from '../domain/notifications';
 import { loadJson, loadString, loadThemePreference, saveJson, saveString, storageKeys } from '../state/storage';
 import type { ScheduleFilters } from '../types/schedule';
 import type { ThemePreference } from '../state/storage';
@@ -5,6 +6,9 @@ import {
   disablePushNotifications,
   enablePushNotifications,
   isPushSupported,
+  loadNotificationPreferences,
+  saveNotificationPreferences,
+  syncPushSubscription,
 } from '../push/notifications';
 
 export interface ControlsElements {
@@ -17,6 +21,11 @@ export interface ControlsElements {
   dimPast: HTMLInputElement;
   notifications: HTMLInputElement;
   notificationsHint: HTMLElement;
+  notificationSettings: HTMLElement;
+  notificationSettingsHint: HTMLElement;
+  notifyStartsSoon: HTMLInputElement;
+  notifyNowPlaying: HTMLInputElement;
+  notifyDailyOpener: HTMLInputElement;
   menuToggle: HTMLButtonElement;
   controlsPanel: HTMLElement;
 }
@@ -38,6 +47,7 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   elements.pinNow.checked = loadJson(storageKeys.pinNowPlaying, false);
   elements.dimPast.checked = loadJson(storageKeys.dimPastShows, true);
   elements.notifications.checked = loadJson(storageKeys.notificationsEnabled, false);
+  applyNotificationPreferencesToUi(elements);
   configureNotificationsUi(elements);
 
   elements.nickname.addEventListener('input', () => {
@@ -79,6 +89,12 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   elements.notifications.addEventListener('change', () => {
     void handleNotificationsToggle(elements, onChange);
   });
+
+  for (const input of [elements.notifyStartsSoon, elements.notifyNowPlaying, elements.notifyDailyOpener]) {
+    input.addEventListener('change', () => {
+      void handleNotificationPreferenceChange(elements);
+    });
+  }
 
   elements.menuToggle.addEventListener('click', () => {
     const collapsed = elements.controlsPanel.classList.toggle('collapsed');
@@ -141,12 +157,76 @@ function selectedValues(select: HTMLSelectElement): string[] {
   return Array.from(select.selectedOptions).map((option) => option.value);
 }
 
+function applyNotificationPreferencesToUi(elements: ControlsElements): void {
+  const preferences = loadNotificationPreferences();
+  elements.notifyStartsSoon.checked = preferences.startsSoon;
+  elements.notifyNowPlaying.checked = preferences.nowPlaying;
+  elements.notifyDailyOpener.checked = preferences.dailyOpener;
+  updateNotificationDetailLabels(elements, preferences);
+}
+
+function updateNotificationDetailLabels(
+  elements: ControlsElements,
+  preferences = loadNotificationPreferences(),
+): void {
+  const startsSoonLabel = elements.notifyStartsSoon
+    .closest('.notification-pref')
+    ?.querySelector('.switch-detail');
+  const dailyOpenerLabel = elements.notifyDailyOpener
+    .closest('.notification-pref')
+    ?.querySelector('.switch-detail');
+
+  if (startsSoonLabel) {
+    startsSoonLabel.textContent = `${preferences.startsSoonLeadMinutes} min before`;
+  }
+  if (dailyOpenerLabel) {
+    const hour = String(preferences.dailyOpenerHour).padStart(2, '0');
+    dailyOpenerLabel.textContent = `${hour}:00 summary`;
+  }
+}
+
+function readNotificationPreferencesFromUi(elements: ControlsElements) {
+  const current = loadNotificationPreferences();
+  return {
+    ...current,
+    startsSoon: elements.notifyStartsSoon.checked,
+    nowPlaying: elements.notifyNowPlaying.checked,
+    dailyOpener: elements.notifyDailyOpener.checked,
+  };
+}
+
 function configureNotificationsUi(elements: ControlsElements): void {
   const supported = isPushSupported();
   elements.notifications.disabled = !supported;
   elements.notificationsHint.hidden = supported;
+
   if (!supported) {
     elements.notifications.checked = false;
+    elements.notificationSettings.hidden = true;
+    return;
+  }
+
+  const enabled = elements.notifications.checked;
+  elements.notificationSettings.hidden = false;
+  elements.notificationSettings.classList.toggle('is-disabled', !enabled);
+  elements.notificationSettingsHint.hidden = enabled;
+}
+
+async function handleNotificationPreferenceChange(elements: ControlsElements): Promise<void> {
+  const preferences = readNotificationPreferencesFromUi(elements);
+  saveNotificationPreferences(preferences);
+  updateNotificationDetailLabels(elements, preferences);
+
+  if (!elements.notifications.checked) {
+    return;
+  }
+
+  try {
+    await syncPushSubscription(elements.nickname.value.trim());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Could not save notification settings.';
+    alert(message);
+    applyNotificationPreferencesToUi(elements);
   }
 }
 
@@ -159,6 +239,7 @@ async function handleNotificationsToggle(elements: ControlsElements, onChange: (
     } catch (error) {
       elements.notifications.checked = false;
       saveJson(storageKeys.notificationsEnabled, false);
+      configureNotificationsUi(elements);
       const message = error instanceof Error ? error.message : 'Could not enable notifications.';
       alert(message);
       return;
@@ -170,9 +251,11 @@ async function handleNotificationsToggle(elements: ControlsElements, onChange: (
       const message = error instanceof Error ? error.message : 'Could not disable notifications.';
       alert(message);
       elements.notifications.checked = true;
+      configureNotificationsUi(elements);
       return;
     }
   }
 
+  configureNotificationsUi(elements);
   onChange();
 }

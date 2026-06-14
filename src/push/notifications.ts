@@ -1,5 +1,9 @@
 import { config } from '../config';
-import { defaultNotificationPreferences, type NotificationPreferences } from '../domain/notifications';
+import {
+  defaultNotificationPreferences,
+  normalizeNotificationPreferences,
+  type NotificationPreferences,
+} from '../domain/notifications';
 import { loadJson, saveJson, storageKeys } from '../state/storage';
 import { buildNotificationOptions, type RichNotification } from './notificationDisplay';
 
@@ -23,7 +27,11 @@ function urlBase64ToUint8Array(value: string): Uint8Array {
 }
 
 export function loadNotificationPreferences(): NotificationPreferences {
-  return loadJson(storageKeys.notificationPrefs, defaultNotificationPreferences);
+  return normalizeNotificationPreferences(loadJson(storageKeys.notificationPrefs, defaultNotificationPreferences));
+}
+
+export function saveNotificationPreferences(preferences: NotificationPreferences): void {
+  saveJson(storageKeys.notificationPrefs, normalizeNotificationPreferences(preferences));
 }
 
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {

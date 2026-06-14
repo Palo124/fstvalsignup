@@ -78,6 +78,35 @@
         <p id="notifications-hint" class="control-hint" hidden>
           Add the app to your iPhone home screen, then enable notifications here in Safari.
         </p>
+
+        <div id="notification-settings" class="notification-settings" hidden>
+          <p class="notification-settings-title">Notify me about</p>
+          <p id="notification-settings-hint" class="control-hint">Turn on notifications above to receive these.</p>
+
+          <div class="theme-toggle notification-pref">
+            <span class="switch-label">Starting soon <span class="switch-detail">15 min before</span></span>
+            <label class="switch">
+              <input type="checkbox" id="notifyStartsSoon">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="theme-toggle notification-pref">
+            <span class="switch-label">On stage now</span>
+            <label class="switch">
+              <input type="checkbox" id="notifyNowPlaying">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="theme-toggle notification-pref">
+            <span class="switch-label">Daily lineup <span class="switch-detail">10:00 summary</span></span>
+            <label class="switch">
+              <input type="checkbox" id="notifyDailyOpener">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
       </section>
 
       <nav id="tabs" aria-label="Festival days"></nav>

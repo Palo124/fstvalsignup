@@ -15,3 +15,15 @@ export const defaultNotificationPreferences: NotificationPreferences = {
   startsSoonLeadMinutes: 15,
   dailyOpenerHour: 10,
 };
+
+export function normalizeNotificationPreferences(
+  value: Partial<NotificationPreferences> | null | undefined,
+): NotificationPreferences {
+  return {
+    startsSoon: value?.startsSoon !== false,
+    dailyOpener: value?.dailyOpener !== false,
+    nowPlaying: value?.nowPlaying !== false,
+    startsSoonLeadMinutes: Number(value?.startsSoonLeadMinutes) || defaultNotificationPreferences.startsSoonLeadMinutes,
+    dailyOpenerHour: Number(value?.dailyOpenerHour) || defaultNotificationPreferences.dailyOpenerHour,
+  };
+}
