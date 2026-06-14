@@ -39,6 +39,20 @@ const spotifyIconPath =
   'M84 0a84 84 0 1 0 .001 168.001A84 84 0 0 0 84 0zm38.4 121.1a5.25 5.25 0 0 1-7.2 1.6c-19.8-12.1-44.8-14.8-74.4-8.1a5.27 5.27 0 0 1-2.4-10.2c32.6-7.7 60.7-4.6 83.6 9.3a5.23 5.23 0 0 1 .7 7.4zm10.2-20.4a6.6 6.6 0 0 1-9 2.1c-22.7-14-57.3-18.1-84-9.9a6.6 6.6 0 1 1-3.6-12.7c31.4-8.8 69.3-4.3 95.5 11.1a6.6 6.6 0 0 1 2.1 9.4zm.9-20.9c-27.1-16.2-72.1-17.6-98-9.7a7.88 7.88 0 1 1-4.5-15.1c29.6-8.7 79.2-7.1 110.5 11.3a7.9 7.9 0 0 1-8 13.5z';
 
 export function showLoading(container: HTMLElement, message = 'Loading...'): void {
+  if (message === 'Loading...') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'loading';
+
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-spinner';
+    spinner.setAttribute('role', 'status');
+    spinner.setAttribute('aria-label', 'Loading');
+
+    wrapper.appendChild(spinner);
+    container.replaceChildren(wrapper);
+    return;
+  }
+
   container.replaceChildren(textElement('div', message, 'loading'));
 }
 
