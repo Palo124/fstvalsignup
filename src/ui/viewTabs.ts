@@ -1,5 +1,3 @@
-import { clear } from './dom';
-
 export type AppView = 'lineup' | 'my-schedule';
 
 const VIEW_LABELS: Record<AppView, string> = {
@@ -7,12 +5,15 @@ const VIEW_LABELS: Record<AppView, string> = {
   'my-schedule': 'My Schedule',
 };
 
-export function renderViewTabs(
-  container: HTMLElement,
+export function appendViewTabs(
+  parent: HTMLElement,
   activeView: AppView,
   onSelect: (view: AppView) => void,
 ): void {
-  clear(container);
+  const strip = document.createElement('div');
+  strip.className = 'view-tab-strip';
+  strip.setAttribute('role', 'tablist');
+  strip.setAttribute('aria-label', 'Schedule views');
 
   for (const view of Object.keys(VIEW_LABELS) as AppView[]) {
     const button = document.createElement('button');
@@ -20,13 +21,16 @@ export function renderViewTabs(
     button.className = 'view-tab';
     button.textContent = VIEW_LABELS[view];
     button.dataset.view = view;
-    button.setAttribute('aria-pressed', view === activeView ? 'true' : 'false');
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', view === activeView ? 'true' : 'false');
 
     if (view === activeView) {
       button.classList.add('active');
     }
 
     button.addEventListener('click', () => onSelect(view));
-    container.appendChild(button);
+    strip.appendChild(button);
   }
+
+  parent.appendChild(strip);
 }

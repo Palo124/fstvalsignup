@@ -66,23 +66,81 @@ select[multiple] {
 
 #app-sticky-nav {
   position: sticky;
-  top: env(safe-area-inset-top, 0px);
+  top: 0;
   z-index: 110;
   margin-left: calc(-1 * max(1em, env(safe-area-inset-left)));
   margin-right: calc(-1 * max(1em, env(safe-area-inset-right)));
   margin-bottom: 0.5em;
-  padding: 0.35em max(1em, env(safe-area-inset-right)) 0.35em max(1em, env(safe-area-inset-left));
+  padding: env(safe-area-inset-top, 0px) max(1em, env(safe-area-inset-right)) 0.35em max(1em, env(safe-area-inset-left));
   background: var(--bg);
   border-bottom: 1px solid var(--control-border);
+  isolation: isolate;
+}
+
+#app-sticky-nav::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  pointer-events: none;
+  z-index: -1;
 }
 
 #tabs {
   position: static;
   z-index: auto;
   background: transparent;
-  padding: 0.35em 0 0;
+  padding: 0;
   margin-bottom: 0;
   display: block;
+}
+
+#tabs .tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+#tabs .tab-toolbar--years {
+  padding-bottom: 0.35em;
+  margin-bottom: 0.35em;
+  border-bottom: 1px solid var(--control-border);
+}
+
+#tabs .tab-toolbar .tab-row,
+#tabs .tab-toolbar .tab-year-strip {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+#tabs .view-tab-strip {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.15em;
+  margin-left: auto;
+}
+
+#tabs .view-tab {
+  background: var(--tab-bg);
+  color: var(--text);
+  padding: 0.25em 0.65em;
+  border: none;
+  border-radius: 6px 6px 0 0;
+  font-weight: 700;
+  font-size: 0.78em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#tabs .view-tab.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
 }
 
 #tabs .tab-row,
@@ -101,9 +159,6 @@ select[multiple] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.15em;
-  margin-bottom: 0.35em;
-  padding-bottom: 0.35em;
-  border-bottom: 1px solid var(--control-border);
 }
 
 #tabs .year-tab {
@@ -873,29 +928,11 @@ body:not(.dark) #logo-title img {
   .control-toggle-list .theme-toggle {
     align-items: center;
   }
-}
 
-#view-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 0.35em;
-  margin-bottom: 0.35em;
-}
-
-#view-tabs .view-tab {
-  background: var(--tab-bg);
-  color: var(--text);
-  padding: 0.35em 0.9em;
-  border: none;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.85em;
-  cursor: pointer;
-}
-
-#view-tabs .view-tab.active {
-  background: var(--tab-active-bg);
-  color: var(--tab-active-text);
+  #tabs .view-tab {
+    font-size: 0.72em;
+    padding: 0.25em 0.5em;
+  }
 }
 
 .my-schedule {

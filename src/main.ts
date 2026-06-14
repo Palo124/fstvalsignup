@@ -19,7 +19,7 @@ import { getRequiredElement } from './ui/dom';
 import { exitMyScheduleFullscreenIfActive, renderMySchedule } from './ui/myScheduleView';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
-import { renderViewTabs as renderAppViewTabs, type AppView } from './ui/viewTabs';
+import type { AppView } from './ui/viewTabs';
 import { initFooterSlogan } from './ui/footerSlogan';
 import { applyTheme, bindSystemTheme } from './ui/theme';
 import { pollPendingNotifications, registerServiceWorker, syncPushSubscription } from './push/notifications';
@@ -74,7 +74,6 @@ async function bootstrap(): Promise<void> {
       return;
     }
 
-    renderViewTabs();
     renderDayTabs();
     await loadSchedule(state.currentDay);
     prefetchSchedules(days, state.currentDay);
@@ -186,7 +185,7 @@ function navigateToLineupItem(item: ScheduleItem): void {
 
   if (currentView !== 'lineup') {
     currentView = 'lineup';
-    renderViewTabs();
+    renderDayTabs();
   }
 
   renderCurrentView();
@@ -198,7 +197,7 @@ function selectView(view: AppView): void {
   }
 
   currentView = view;
-  renderViewTabs();
+  renderDayTabs();
   renderCurrentView();
 }
 
@@ -252,10 +251,6 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
   }
 }
 
-function renderViewTabs(): void {
-  renderAppViewTabs(elements.viewTabs, currentView, selectView);
-}
-
 function renderDayTabs(): void {
   renderTabs(
     elements.tabs,
@@ -264,11 +259,15 @@ function renderDayTabs(): void {
     (day) => {
       void selectDay(day);
     },
-    { datesByDay: calendarIsoDateMapForDays(state.days, config.dayToDate) },
+    {
+      datesByDay: calendarIsoDateMapForDays(state.days, config.dayToDate),
+      activeView: currentView,
+      onSelectView: selectView,
+    },
   );
 }
 
-function getElements(): ControlsElements & { viewTabs: HTMLElement; tabs: HTMLElement; schedule: HTMLElement } {
+function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLElement } {
   return {
     nickname: getRequiredElement('nickname', HTMLInputElement),
     attendees: getRequiredElement('filterSelect', HTMLSelectElement),
@@ -293,7 +292,6 @@ function getElements(): ControlsElements & { viewTabs: HTMLElement; tabs: HTMLEl
     infoClose: getRequiredElement('info-close', HTMLButtonElement),
     infoDialog: getRequiredElement('info-dialog', HTMLDialogElement),
     controlsPanel: getRequiredElement('controls', HTMLDialogElement),
-    viewTabs: getRequiredElement('view-tabs', HTMLElement),
     tabs: getRequiredElement('tabs', HTMLElement),
     schedule: getRequiredElement('schedule', HTMLElement),
   };

@@ -1,9 +1,12 @@
 import { formatDayTabLabel } from '../domain/festivalDayCalendar';
 import { clear } from './dom';
+import { appendViewTabs, type AppView } from './viewTabs';
 
 export interface RenderTabsOptions {
   /** ISO `YYYY-MM-DD` per day key; used when the day label has no year. */
   datesByDay?: Record<string, string>;
+  activeView?: AppView;
+  onSelectView?: (view: AppView) => void;
 }
 
 const PANEL_YEAR = 'panelYear';
@@ -91,6 +94,12 @@ function resolvePanelYear(
   return panel;
 }
 
+function appendViewTabsIfNeeded(toolbar: HTMLElement, options?: RenderTabsOptions): void {
+  if (options?.activeView && options.onSelectView) {
+    appendViewTabs(toolbar, options.activeView, options.onSelectView);
+  }
+}
+
 export function renderTabs(
   container: HTMLElement,
   days: string[],
@@ -108,11 +117,17 @@ export function renderTabs(
     container.classList.remove('tabs-grouped');
     delete container.dataset[PANEL_YEAR];
     delete container.dataset[LAST_ACTIVE];
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'tab-toolbar';
+
     const row = document.createElement('div');
     row.className = 'tab-row';
     const onlyDays = yearKeys.length === 0 ? days : groups.get(yearKeys[0]) ?? days;
     renderDayButtons(row, onlyDays, activeDay, onSelect);
-    container.appendChild(row);
+    toolbar.appendChild(row);
+    appendViewTabsIfNeeded(toolbar, options);
+    container.appendChild(toolbar);
     return;
   }
 
@@ -126,6 +141,9 @@ export function renderTabs(
   yearRow.className = 'tab-year-strip';
   yearRow.setAttribute('role', 'tablist');
   yearRow.setAttribute('aria-label', 'Years');
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'tab-toolbar tab-toolbar--years';
 
   const dayPanel = document.createElement('div');
   dayPanel.className = 'tab-day-panel';
@@ -152,6 +170,8 @@ export function renderTabs(
   const visibleDays = groups.get(panelYear) ?? groups.get(yearKeys[0])!;
   renderDayButtons(dayPanel, visibleDays, activeDay, onSelect);
 
-  container.appendChild(yearRow);
+  toolbar.appendChild(yearRow);
+  appendViewTabsIfNeeded(toolbar, options);
+  container.appendChild(toolbar);
   container.appendChild(dayPanel);
 }
