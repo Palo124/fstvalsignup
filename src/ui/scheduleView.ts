@@ -158,20 +158,42 @@ function renderTags(row: ScheduleViewRow): HTMLElement {
 }
 
 function renderCollisionTag(partners: OverlapPartner[]): HTMLElement {
-  const tag = document.createElement('div');
-  tag.className = 'collision-tag';
-  tag.textContent = formatCollisionLabel(partners);
-  return tag;
-}
-
-function formatCollisionLabel(partners: OverlapPartner[]): string {
   if (partners.length === 1) {
-    const partner = partners[0];
-    return `Collides with ${partner.artist} (${partner.stage}, ${partner.timeLabel})`;
+    const tag = document.createElement('div');
+    tag.className = 'collision-tag';
+    tag.textContent = `Collides with ${formatCollisionPartner(partners[0])}`;
+    return tag;
   }
 
-  const details = partners.map((partner) => `${partner.artist} (${partner.stage}, ${partner.timeLabel})`);
-  return `Collides with: ${details.join('; ')}`;
+  const wrap = document.createElement('div');
+  wrap.className = 'collision-tag-wrap';
+
+  const details = document.createElement('details');
+  details.className = 'collision-details';
+
+  const summary = document.createElement('summary');
+  summary.className = 'collision-tag';
+  summary.textContent = 'Collision';
+
+  const popover = document.createElement('div');
+  popover.className = 'collision-popover';
+  popover.setAttribute('role', 'list');
+
+  partners.forEach((partner) => {
+    const item = document.createElement('div');
+    item.className = 'collision-popover-item';
+    item.setAttribute('role', 'listitem');
+    item.textContent = formatCollisionPartner(partner);
+    popover.appendChild(item);
+  });
+
+  details.append(summary, popover);
+  wrap.appendChild(details);
+  return wrap;
+}
+
+function formatCollisionPartner(partner: OverlapPartner): string {
+  return `${partner.artist} (${partner.stage}, ${partner.timeLabel})`;
 }
 
 function renderArtist(item: ScheduleItem): HTMLElement {

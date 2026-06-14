@@ -389,6 +389,45 @@ input:checked + .slider::before {
   border: 2px solid #e74c3c;
 }
 
+.collision-tag-wrap {
+  position: relative;
+}
+
+.collision-details summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.collision-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.collision-popover {
+  position: absolute;
+  top: calc(100% + 0.35em);
+  left: 0;
+  min-width: 12em;
+  max-width: min(18em, calc(100vw - 2em));
+  padding: 0.45em 0.55em;
+  border: 2px solid #e74c3c;
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 3;
+}
+
+.collision-popover-item {
+  font-size: 0.95em;
+  line-height: 1.35;
+  padding: 0.25em 0;
+}
+
+.collision-popover-item + .collision-popover-item {
+  border-top: 1px solid var(--control-border);
+  margin-top: 0.25em;
+  padding-top: 0.45em;
+}
+
 .warning-icon {
   color: #e74c3c;
   font-size: 1em;
