@@ -31,6 +31,9 @@ export interface ControlsElements {
   notifyDailyOpener: HTMLInputElement;
   menuToggle: HTMLButtonElement;
   settingsClose: HTMLButtonElement;
+  settingsInfo: HTMLButtonElement;
+  infoClose: HTMLButtonElement;
+  infoDialog: HTMLDialogElement;
   controlsPanel: HTMLDialogElement;
 }
 
@@ -128,6 +131,14 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
 
   elements.settingsClose.addEventListener('click', () => {
     elements.controlsPanel.close();
+  });
+
+  elements.settingsInfo.addEventListener('click', () => {
+    elements.infoDialog.showModal();
+  });
+
+  elements.infoClose.addEventListener('click', () => {
+    elements.infoDialog.close();
   });
 
   elements.controlsPanel.addEventListener('close', () => {

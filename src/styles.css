@@ -194,6 +194,14 @@ body.dark .settings-dialog::backdrop {
   background: var(--bg);
 }
 
+.settings-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  flex: 0 0 auto;
+}
+
+.settings-icon-button,
 .settings-close {
   flex: 0 0 auto;
   width: 2rem;
@@ -207,8 +215,54 @@ body.dark .settings-dialog::backdrop {
   cursor: pointer;
 }
 
+.settings-icon-button {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.settings-icon-button:hover,
 .settings-close:hover {
   border-color: var(--tab-active-bg);
+}
+
+.info-dialog {
+  width: min(22rem, calc(100vw - 2rem));
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--control-border);
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+.info-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+body.dark .info-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.info-dialog-body {
+  padding: 0.85em 1em 1em;
+  font-size: 0.88em;
+  line-height: 1.45;
+}
+
+.info-dialog-body p {
+  margin: 0;
+}
+
+.info-dialog-body p + p {
+  margin-top: 0.75em;
+  color: #666;
+}
+
+body.dark .info-dialog-body p + p {
+  color: #999;
 }
 
 .controls-panel {
@@ -736,12 +790,17 @@ button.leave {
 
 #site-footer {
   text-align: center;
-  padding: 2em 1em;
-  margin-top: 2em;
-  font-size: 0.9em;
+  padding: 0.5em 0.75em;
+  margin-top: 0.75em;
+  font-size: 0.78em;
+  line-height: 1.35;
   background: rgba(0, 0, 0, 0.05);
   color: var(--text);
   border-top: 1px solid var(--control-border);
+}
+
+#site-footer p {
+  margin: 0;
 }
 
 body.dark #site-footer {
