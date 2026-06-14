@@ -36,6 +36,26 @@ export function sortStartMinutes(range: TimeRange, preDawnCutoffMinutes: number)
     : range.startMinutes;
 }
 
+export function festivalEndMinutes(range: TimeRange, preDawnCutoffMinutes: number): number {
+  if (range.startMinutes < preDawnCutoffMinutes) {
+    return range.endMinutes < preDawnCutoffMinutes
+      ? range.endMinutes + 24 * 60
+      : range.endMinutes;
+  }
+
+  return range.endMinutes;
+}
+
+export function festivalTimelineMinutes(
+  range: TimeRange,
+  preDawnCutoffMinutes: number,
+): { start: number; end: number } {
+  return {
+    start: sortStartMinutes(range, preDawnCutoffMinutes),
+    end: festivalEndMinutes(range, preDawnCutoffMinutes),
+  };
+}
+
 export function intervalDates(
   dayDate: string,
   range: TimeRange,

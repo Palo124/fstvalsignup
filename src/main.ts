@@ -104,7 +104,7 @@ function renderCurrentSchedule(): void {
     container: elements.schedule,
     items: state.schedule,
     filters: readFilters(elements),
-    overlaps: computeOverlaps(state.schedule, state.nickname),
+    overlaps: computeOverlaps(state.schedule, state.nickname, config.preDawnCutoffMinutes),
     currentUser: state.nickname,
     dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
     timeZoneOffset: config.festivalTimeZoneOffset,

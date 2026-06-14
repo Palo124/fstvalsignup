@@ -1,3 +1,4 @@
+import { festivalTimelineMinutes } from './time';
 import type { ScheduleItem } from '../types/schedule';
 
 export interface OverlapPartner {
@@ -9,20 +10,28 @@ export interface OverlapPartner {
 
 export type OverlapMap = Map<number, OverlapPartner[]>;
 
-export function computeOverlaps(items: ScheduleItem[], nickname: string): OverlapMap {
+export function computeOverlaps(
+  items: ScheduleItem[],
+  nickname: string,
+  preDawnCutoffMinutes: number,
+): OverlapMap {
   const normalizedNickname = nickname.trim();
   const overlaps: OverlapMap = new Map();
   if (!normalizedNickname) return overlaps;
 
   const attending = items
     .filter((item) => item.attendees.includes(normalizedNickname))
-    .sort((left, right) => left.time.startMinutes - right.time.startMinutes);
+    .map((item) => ({
+      item,
+      timeline: festivalTimelineMinutes(item.time, preDawnCutoffMinutes),
+    }))
+    .sort((left, right) => left.timeline.start - right.timeline.start);
 
   for (let i = 0; i < attending.length; i += 1) {
     for (let j = i + 1; j < attending.length; j += 1) {
-      if (attending[j].time.startMinutes >= attending[i].time.endMinutes) break;
+      if (attending[j].timeline.start >= attending[i].timeline.end) break;
 
-      addOverlap(overlaps, attending[i], attending[j]);
+      addOverlap(overlaps, attending[i].item, attending[j].item);
     }
   }
 

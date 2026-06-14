@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { intervalDates, parseTimeRange, sortStartMinutes } from './time';
+import { intervalDates, festivalEndMinutes, parseTimeRange, sortStartMinutes } from './time';
 
 describe('parseTimeRange', () => {
   it('parses same-day ranges', () => {
@@ -27,6 +27,20 @@ describe('sortStartMinutes', () => {
     const range = parseTimeRange('02:00–03:00');
 
     expect(range && sortStartMinutes(range, 300)).toBe(1560);
+  });
+});
+
+describe('festivalEndMinutes', () => {
+  it('extends pre-dawn end times on the festival timeline', () => {
+    const range = parseTimeRange('02:00–03:00');
+
+    expect(range && festivalEndMinutes(range, 300)).toBe(1620);
+  });
+
+  it('keeps overnight end times when the set starts in the evening', () => {
+    const range = parseTimeRange('23:30–01:00');
+
+    expect(range && festivalEndMinutes(range, 300)).toBe(1500);
   });
 });
 

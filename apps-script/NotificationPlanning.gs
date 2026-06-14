@@ -107,9 +107,16 @@ function planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffs
   return buildDailyOpenerNotification_(day, dayDate, joined, openerMs);
 }
 
+function sortStartMinutes_(range, preDawnCutoffMinutes) {
+  return range.startMinutes < preDawnCutoffMinutes
+    ? range.startMinutes + 24 * 60
+    : range.startMinutes;
+}
+
 function buildDailyOpenerNotification_(day, dayDate, joined, fireAtMs) {
+  var preDawnCutoffMinutes = getPreDawnCutoffMinutes_();
   var sorted = joined.slice().sort(function(left, right) {
-    return left.time.startMinutes - right.time.startMinutes;
+    return sortStartMinutes_(left.time, preDawnCutoffMinutes) - sortStartMinutes_(right.time, preDawnCutoffMinutes);
   });
   var first = sorted[0];
   var dayLabel = day.replace(/\s*\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\s*/, '').trim() || day;
