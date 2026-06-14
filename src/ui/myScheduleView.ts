@@ -11,6 +11,7 @@ import {
 } from '../domain/myScheduleTimeline';
 import type { OverlapMap } from '../domain/overlaps';
 import { colorForStage } from '../stageColors';
+import { colorForAttendee } from './attendeeColor';
 import { clear, textElement } from './dom';
 import type { ScheduleFilters, ScheduleItem } from '../types/schedule';
 
@@ -141,7 +142,7 @@ export function renderMySchedule(input: RenderMyScheduleInput): void {
   grid.appendChild(renderCorner());
   grid.appendChild(renderStageHeaderRow(stages));
   grid.appendChild(renderTimeAxis(dayBounds, gridHeight, showNowLine, nowTopPx, nowLabel));
-  grid.appendChild(renderTimelineBody(stages, blocks, freeWindows, dayBounds, gridHeight, showNowLine, nowTopPx, input.onSelectItem));
+  grid.appendChild(renderTimelineBody(stages, blocks, freeWindows, dayBounds, gridHeight, showNowLine, nowTopPx, input.currentUser, input.onSelectItem));
 
   scroll.appendChild(grid);
   wrapper.appendChild(scroll);
@@ -254,6 +255,7 @@ function renderTimelineBody(
   gridHeight: number,
   showNowLine: boolean,
   nowTopPx: number,
+  currentUser: string,
   onSelectItem: (item: ScheduleItem) => void,
 ): HTMLElement {
   const body = document.createElement('div');
@@ -293,7 +295,7 @@ function renderTimelineBody(
     }
 
     (blocksByStage.get(stage) ?? []).forEach((block) => {
-      column.appendChild(renderBlock(block, dayBounds, onSelectItem));
+      column.appendChild(renderBlock(block, dayBounds, currentUser, onSelectItem));
     });
 
     body.appendChild(column);
@@ -309,6 +311,7 @@ function renderTimelineBody(
 function renderBlock(
   block: ReturnType<typeof toMyScheduleBlocks>[number],
   dayBounds: { start: number; end: number },
+  currentUser: string,
   onSelectItem: (item: ScheduleItem) => void,
 ): HTMLElement {
   const element = document.createElement('button');
@@ -326,13 +329,42 @@ function renderBlock(
   element.append(
     textElement('div', block.item.artist, 'my-schedule-block-artist'),
     textElement('div', block.item.time.label, 'my-schedule-block-time'),
+    renderAttendeeDots(block.item.attendees, currentUser),
   );
 
-  element.title = `${block.item.artist} · ${block.item.stage} · ${block.item.time.label} — open in lineup`;
+  const attendeeLabel =
+    block.item.attendees.length > 0 ? ` · ${block.item.attendees.join(', ')}` : '';
+  element.title = `${block.item.artist} · ${block.item.stage} · ${block.item.time.label}${attendeeLabel} — open in lineup`;
   element.addEventListener('click', () => {
     onSelectItem(block.item);
   });
   return element;
+}
+
+function renderAttendeeDots(attendees: string[], currentUser: string): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'my-schedule-block-attendees';
+
+  if (attendees.length === 0) {
+    return container;
+  }
+
+  const normalizedUser = currentUser.trim();
+
+  attendees.forEach((attendee) => {
+    const dot = document.createElement('span');
+    dot.className = 'my-schedule-attendee-dot';
+    dot.style.backgroundColor = colorForAttendee(attendee);
+    dot.title = attendee;
+
+    if (normalizedUser && attendee === normalizedUser) {
+      dot.classList.add('is-current-user');
+    }
+
+    container.appendChild(dot);
+  });
+
+  return container;
 }
 
 function setFullscreenButtonState(button: HTMLButtonElement, expanded: boolean): void {

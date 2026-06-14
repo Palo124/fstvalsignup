@@ -1149,3 +1149,27 @@ body.dark .my-schedule-free-window {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.my-schedule-block-attendees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.18rem;
+  width: 100%;
+  margin-top: 0.12rem;
+}
+
+.my-schedule-attendee-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+body.dark .my-schedule-attendee-dot {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.my-schedule-attendee-dot.is-current-user {
+  box-shadow: 0 0 0 1px var(--bg), 0 0 0 2px var(--text);
+}

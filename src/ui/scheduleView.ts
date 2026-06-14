@@ -3,6 +3,7 @@ import { sortByScheduleTime } from '../domain/schedule';
 import type { OverlapMap, OverlapPartner } from '../domain/overlaps';
 import { intervalDates, progressRemaining } from '../domain/time';
 import { colorForStage } from '../stageColors';
+import { colorForAttendee } from './attendeeColor';
 import { clear, textElement } from './dom';
 import type { ScheduleFilters, ScheduleItem, ScheduleViewRow } from '../types/schedule';
 
@@ -21,21 +22,6 @@ interface RenderScheduleInput {
   onToggle: (item: ScheduleItem, event: MouseEvent) => void;
   focusItemId?: number | null;
 }
-
-const palette = [
-  '#e57373',
-  '#81c784',
-  '#64b5f6',
-  '#ffd54f',
-  '#ba68c8',
-  '#4db6ac',
-  '#f06292',
-  '#7986cb',
-  '#4fc3f7',
-  '#ff8a65',
-  '#a1887f',
-  '#7f85c7',
-];
 
 const spotifyIconPath =
   'M84 0a84 84 0 1 0 .001 168.001A84 84 0 0 0 84 0zm38.4 121.1a5.25 5.25 0 0 1-7.2 1.6c-19.8-12.1-44.8-14.8-74.4-8.1a5.27 5.27 0 0 1-2.4-10.2c32.6-7.7 60.7-4.6 83.6 9.3a5.23 5.23 0 0 1 .7 7.4zm10.2-20.4a6.6 6.6 0 0 1-9 2.1c-22.7-14-57.3-18.1-84-9.9a6.6 6.6 0 1 1-3.6-12.7c31.4-8.8 69.3-4.3 95.5 11.1a6.6 6.6 0 0 1 2.1 9.4zm.9-20.9c-27.1-16.2-72.1-17.6-98-9.7a7.88 7.88 0 1 1-4.5-15.1c29.6-8.7 79.2-7.1 110.5 11.3a7.9 7.9 0 0 1-8 13.5z';
@@ -287,7 +273,7 @@ function renderAttendees(attendees: string[]): HTMLElement {
 
   attendees.forEach((attendee) => {
     const tag = textElement('span', attendee, 'attendee-tag');
-    tag.style.borderColor = attendeeColor(attendee);
+    tag.style.borderColor = colorForAttendee(attendee);
     container.appendChild(tag);
   });
 
@@ -302,16 +288,6 @@ function renderToggleButton(item: ScheduleItem, input: RenderScheduleInput): HTM
   button.textContent = isAttending ? 'Leave' : 'Join';
   button.addEventListener('click', (event) => input.onToggle(item, event));
   return button;
-}
-
-function attendeeColor(name: string): string {
-  let hash = 0;
-
-  for (let i = 0; i < name.length; i += 1) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  return palette[Math.abs(hash) % palette.length];
 }
 
 function searchableArtistName(artist: string): string {
