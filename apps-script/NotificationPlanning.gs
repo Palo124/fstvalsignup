@@ -104,6 +104,10 @@ function planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffs
   var dueWindowMs = 5 * 60 * 1000;
   if (openerMs + dueWindowMs <= nowMs) return null;
 
+  return buildDailyOpenerNotification_(day, dayDate, joined, openerMs);
+}
+
+function buildDailyOpenerNotification_(day, dayDate, joined, fireAtMs) {
   var sorted = joined.slice().sort(function(left, right) {
     return left.time.startMinutes - right.time.startMinutes;
   });
@@ -113,13 +117,42 @@ function planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffs
   return {
     id: 'daily:' + dayDate,
     type: 'daily_opener',
-    fireAtMs: openerMs,
+    fireAtMs: fireAtMs || Date.now(),
     title: 'Your lineup · ' + dayLabel,
     body: joined.length + ' show' + (joined.length === 1 ? '' : 's') + ' today\nFirst up: ' + first.artist + ' at ' + formatClock_(first.time.startMinutes) + ' · ' + first.stage,
     tag: 'daily-' + dayDate,
     stage: first.stage,
     stageColor: colorForStage_(first.stage),
   };
+}
+
+function findDailyOpenerDayForUser_(nickname, days, scheduleByDay) {
+  var trimmed = String(nickname || '').trim();
+  if (!trimmed) return null;
+
+  var todayIso = Utilities.formatDate(new Date(), 'GMT+2', 'yyyy-MM-dd');
+  var firstMatch = null;
+
+  for (var i = 0; i < days.length; i += 1) {
+    var day = days[i];
+    var dayDate = calendarIsoDateForDayLabel_(day);
+    if (!dayDate) continue;
+
+    var joined = (scheduleByDay[day] || []).filter(function(item) {
+      return item.attendees.indexOf(trimmed) !== -1;
+    });
+    if (!joined.length) continue;
+
+    if (dayDate === todayIso) {
+      return { day: day, dayDate: dayDate, joined: joined };
+    }
+
+    if (!firstMatch) {
+      firstMatch = { day: day, dayDate: dayDate, joined: joined };
+    }
+  }
+
+  return firstMatch;
 }
 
 function dailyOpenerTimestamp_(dayDate, hour, timeZoneOffset) {
@@ -185,5 +218,5 @@ function getFestivalTimeZoneOffset_() {
 
 function getPreDawnCutoffMinutes_() {
   // Matches src/config.ts preDawnCutoffMinutes
-  return 5 * 60;
+  return 9 * 60;
 }

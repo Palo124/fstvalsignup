@@ -291,6 +291,69 @@ function testPushDelivery() {
 }
 
 /**
+ * Manual preview: send today's daily opener notification to every subscription.
+ * Uses your real joined shows from the sheet (today's tab if possible).
+ * Does not write to _push_sent, so the real 10:00 opener can still fire later.
+ */
+function testDailyOpenerNotification() {
+  var keys = requireVapidKeys_();
+  var subscriptions = readPushSubscriptions_();
+  if (!subscriptions.length) {
+    throw new Error('No subscriptions in _push_subscriptions');
+  }
+
+  var schedule = loadScheduleByDay_();
+  var results = [];
+
+  subscriptions.forEach(function(subscription) {
+    var match = findDailyOpenerDayForUser_(subscription.nickname, schedule.days, schedule.scheduleByDay);
+    if (!match) {
+      results.push({
+        nickname: subscription.nickname,
+        ok: false,
+        error: 'No joined shows found for this nickname.',
+      });
+      return;
+    }
+
+    var planned = buildDailyOpenerNotification_(match.day, match.dayDate, match.joined, Date.now());
+    var notification = {
+      id: 'preview:daily:' + match.dayDate + ':' + Date.now(),
+      type: planned.type,
+      title: planned.title,
+      body: planned.body,
+      tag: 'preview-' + planned.tag,
+      stage: planned.stage,
+      stageColor: planned.stageColor,
+    };
+
+    queuePendingNotification_(subscription.endpoint, notification);
+    var status = sendAndLogPush_(
+      {
+        endpoint: subscription.endpoint,
+        keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+      },
+      keys.vapidPublicKey,
+      keys.vapidPrivateKey,
+      notification,
+    );
+
+    results.push({
+      nickname: subscription.nickname,
+      day: match.day,
+      title: notification.title,
+      body: notification.body,
+      stage: notification.stage,
+      stageColor: notification.stageColor,
+      ok: status >= 200 && status < 300,
+      status: status,
+    });
+  });
+
+  return { sent: results.filter(function(row) { return row.ok; }).length, results: results };
+}
+
+/**
  * Test helper: resend encrypted pushes for rows already in _push_pending.
  */
 function flushPendingPushNotifications() {
