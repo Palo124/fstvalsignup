@@ -30,6 +30,7 @@ const elements = getElements();
 const initialControls = initControls(elements, renderCurrentView, applyTheme);
 const state = createAppState(initialControls.nickname);
 let currentView: AppView = 'lineup';
+let focusLineupItemId: number | null = null;
 
 applyTheme(initialControls.themePreference);
 bindSystemTheme(() => {
@@ -152,9 +153,13 @@ function renderCurrentView(): void {
       timeZoneOffset: config.festivalTimeZoneOffset,
       preDawnCutoffMinutes: config.preDawnCutoffMinutes,
       nowMs: Date.now(),
+      onSelectItem: navigateToLineupItem,
     });
     return;
   }
+
+  const focusItemId = focusLineupItemId;
+  focusLineupItemId = null;
 
   renderSchedule({
     container: elements.schedule,
@@ -169,7 +174,19 @@ function renderCurrentView(): void {
     dimPastShows: readDimPastShows(elements),
     nowMs: Date.now(),
     onToggle: toggleAttendance,
+    focusItemId,
   });
+}
+
+function navigateToLineupItem(item: ScheduleItem): void {
+  focusLineupItemId = item.id;
+
+  if (currentView !== 'lineup') {
+    currentView = 'lineup';
+    renderViewTabs();
+  }
+
+  renderCurrentView();
 }
 
 function selectView(view: AppView): void {

@@ -24,6 +24,7 @@ interface RenderMyScheduleInput {
   timeZoneOffset: string;
   preDawnCutoffMinutes: number;
   nowMs: number;
+  onSelectItem: (item: ScheduleItem) => void;
 }
 
 const PX_PER_MINUTE = 2.5;
@@ -85,7 +86,7 @@ export function renderMySchedule(input: RenderMyScheduleInput): void {
   grid.appendChild(renderCorner());
   grid.appendChild(renderStageHeaderRow(stages));
   grid.appendChild(renderTimeAxis(dayBounds, gridHeight, showNowLine, nowTopPx, nowLabel));
-  grid.appendChild(renderTimelineBody(stages, blocks, freeWindows, dayBounds, gridHeight, showNowLine, nowTopPx));
+  grid.appendChild(renderTimelineBody(stages, blocks, freeWindows, dayBounds, gridHeight, showNowLine, nowTopPx, input.onSelectItem));
 
   scroll.appendChild(grid);
   wrapper.appendChild(scroll);
@@ -175,6 +176,7 @@ function renderTimelineBody(
   gridHeight: number,
   showNowLine: boolean,
   nowTopPx: number,
+  onSelectItem: (item: ScheduleItem) => void,
 ): HTMLElement {
   const body = document.createElement('div');
   body.className = 'my-schedule-body';
@@ -213,7 +215,7 @@ function renderTimelineBody(
     }
 
     (blocksByStage.get(stage) ?? []).forEach((block) => {
-      column.appendChild(renderBlock(block, dayBounds));
+      column.appendChild(renderBlock(block, dayBounds, onSelectItem));
     });
 
     body.appendChild(column);
@@ -229,11 +231,13 @@ function renderTimelineBody(
 function renderBlock(
   block: ReturnType<typeof toMyScheduleBlocks>[number],
   dayBounds: { start: number; end: number },
+  onSelectItem: (item: ScheduleItem) => void,
 ): HTMLElement {
-  const element = document.createElement('div');
+  const element = document.createElement('button');
+  element.type = 'button';
   element.className = 'my-schedule-block';
   element.style.top = `${(block.start - dayBounds.start) * PX_PER_MINUTE}px`;
-  element.style.height = `${Math.max((block.end - block.start) * PX_PER_MINUTE, 28)}px`;
+  element.style.height = `${Math.max((block.end - block.start) * PX_PER_MINUTE, 22)}px`;
 
   const stageColor = colorForStage(block.item.stage);
   if (stageColor) {
@@ -246,6 +250,9 @@ function renderBlock(
     textElement('div', block.item.time.label, 'my-schedule-block-time'),
   );
 
-  element.title = `${block.item.artist} · ${block.item.stage} · ${block.item.time.label}`;
+  element.title = `${block.item.artist} · ${block.item.stage} · ${block.item.time.label} — open in lineup`;
+  element.addEventListener('click', () => {
+    onSelectItem(block.item);
+  });
   return element;
 }

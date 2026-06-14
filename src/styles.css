@@ -724,6 +724,23 @@ button.leave {
   border: 2.5px solid #f1c40f !important;
 }
 
+.card.schedule-item-focused {
+  scroll-margin-top: 6rem;
+  box-shadow: 0 0 0 3px var(--tab-active-bg);
+  animation: schedule-item-focus 2s ease-out;
+}
+
+@keyframes schedule-item-focus {
+  0%,
+  20% {
+    box-shadow: 0 0 0 3px var(--tab-active-bg);
+  }
+
+  100% {
+    box-shadow: none;
+  }
+}
+
 .progress-container {
   height: 6px;
   width: 100%;
@@ -1014,27 +1031,47 @@ body.dark .my-schedule-free-window {
   left: 0.25rem;
   right: 0.25rem;
   z-index: 1;
-  padding: 0.25rem 0.35rem;
-  border: 2px solid var(--control-border);
-  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 0.12rem 0.28rem;
+  border: 1.5px solid var(--control-border);
+  border-radius: 6px;
   overflow: hidden;
   box-sizing: border-box;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  min-height: 22px;
+}
+
+.my-schedule-block:hover {
+  filter: brightness(1.08);
+}
+
+.my-schedule-block:focus-visible {
+  outline: 2px solid var(--tab-active-bg);
+  outline-offset: 1px;
 }
 
 .my-schedule-block-artist {
-  font-size: 0.68em;
+  width: 100%;
+  font-size: 0.58em;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
 }
 
 .my-schedule-block-time {
-  margin-top: 0.15rem;
-  font-size: 0.58em;
+  width: 100%;
+  margin-top: 0.08rem;
+  font-size: 0.52em;
+  line-height: 1.1;
   opacity: 0.85;
   white-space: nowrap;
   overflow: hidden;

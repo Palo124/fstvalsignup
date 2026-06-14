@@ -1,8 +1,9 @@
-import { colorForStage } from '../stageColors';
-import { clear, textElement } from './dom';
 import { applyScheduleFilters } from '../domain/filters';
+import { sortByScheduleTime } from '../domain/schedule';
 import type { OverlapMap, OverlapPartner } from '../domain/overlaps';
 import { intervalDates, progressRemaining } from '../domain/time';
+import { colorForStage } from '../stageColors';
+import { clear, textElement } from './dom';
 import type { ScheduleFilters, ScheduleItem, ScheduleViewRow } from '../types/schedule';
 
 interface RenderScheduleInput {
@@ -18,6 +19,7 @@ interface RenderScheduleInput {
   dimPastShows: boolean;
   nowMs: number;
   onToggle: (item: ScheduleItem, event: MouseEvent) => void;
+  focusItemId?: number | null;
 }
 
 const palette = [
@@ -69,7 +71,12 @@ export function renderSchedule(input: RenderScheduleInput): void {
     return;
   }
 
-  const filteredItems = applyScheduleFilters(input.items, input.filters, input.overlaps, input.currentUser);
+  const filteredItems = ensureFocusedItemVisible(
+    input.items,
+    applyScheduleFilters(input.items, input.filters, input.overlaps, input.currentUser),
+    input.focusItemId,
+    input.preDawnCutoffMinutes,
+  );
   const rows = toViewRows(filteredItems, input);
 
   if (rows.length === 0) {
@@ -90,6 +97,12 @@ export function renderSchedule(input: RenderScheduleInput): void {
 
     input.container.appendChild(renderCard(row, input));
   });
+
+  if (input.focusItemId != null) {
+    requestAnimationFrame(() => {
+      focusScheduleItem(input.container, input.focusItemId!);
+    });
+  }
 }
 
 function toViewRows(items: ScheduleItem[], input: RenderScheduleInput): ScheduleViewRow[] {
@@ -119,6 +132,7 @@ function toViewRows(items: ScheduleItem[], input: RenderScheduleInput): Schedule
 function renderCard(row: ScheduleViewRow, input: RenderScheduleInput): HTMLElement {
   const card = document.createElement('div');
   card.className = 'card';
+  card.id = `schedule-item-${row.item.id}`;
 
   if (row.isPast && input.dimPastShows) {
     card.classList.add('past-show');
@@ -302,4 +316,36 @@ function attendeeColor(name: string): string {
 
 function searchableArtistName(artist: string): string {
   return artist.replace(/\s*\([^)]+\)/, '');
+}
+
+function ensureFocusedItemVisible(
+  allItems: ScheduleItem[],
+  filteredItems: ScheduleItem[],
+  focusItemId: number | null | undefined,
+  preDawnCutoffMinutes: number,
+): ScheduleItem[] {
+  if (focusItemId == null || filteredItems.some((item) => item.id === focusItemId)) {
+    return filteredItems;
+  }
+
+  const focusedItem = allItems.find((item) => item.id === focusItemId);
+  if (!focusedItem) {
+    return filteredItems;
+  }
+
+  return sortByScheduleTime([...filteredItems, focusedItem], preDawnCutoffMinutes);
+}
+
+function focusScheduleItem(container: HTMLElement, itemId: number): void {
+  const card = container.querySelector(`#schedule-item-${itemId}`);
+
+  if (!(card instanceof HTMLElement)) {
+    return;
+  }
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.add('schedule-item-focused');
+  window.setTimeout(() => {
+    card.classList.remove('schedule-item-focused');
+  }, 2000);
 }
