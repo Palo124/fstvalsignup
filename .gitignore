@@ -4,4 +4,3 @@ dist/
 lineup_scrape/
 *timetable*
 .clasp.json
-*.gs

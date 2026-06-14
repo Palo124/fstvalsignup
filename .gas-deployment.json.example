@@ -1,0 +1,4 @@
+{
+  "deploymentId": "YOUR_DEPLOYMENT_ID",
+  "backendUrl": "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+}

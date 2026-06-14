@@ -25,25 +25,48 @@ function base64Url(bytes) {
 }
 
 function base64UrlDecode(value) {
-  const padded = value.replace(/-/g, '+').replace(/_/g, '/');
-  const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  const bytes = [];
+  for (let i = 0; i < padded.length; i += 4) {
+    const enc1 = chars.indexOf(padded[i]);
+    const enc2 = chars.indexOf(padded[i + 1]);
+    const enc3 = chars.indexOf(padded[i + 2]);
+    const enc4 = chars.indexOf(padded[i + 3]);
+    if (enc1 < 0 || enc2 < 0) {
+      throw new Error('Invalid base64url input.');
+    }
+    bytes.push((enc1 << 2) | (enc2 >> 4));
+    if (padded[i + 2] !== '=' && enc3 >= 0) {
+      bytes.push(((enc2 & 15) << 4) | (enc3 >> 2));
+    }
+    if (padded[i + 3] !== '=' && enc4 >= 0) {
+      bytes.push(((enc3 & 3) << 6) | enc4);
+    }
   }
-  return bytes;
+  return new Uint8Array(bytes);
 }
 
 function utf8Bytes(value) {
-  if (typeof TextEncoder !== 'undefined') {
-    return new TextEncoder().encode(value);
-  }
   const bytes = [];
   for (let i = 0; i < value.length; i += 1) {
     let code = value.charCodeAt(i);
     if (code < 0x80) bytes.push(code);
     else if (code < 0x800) bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
-    else bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    else if (code < 0xd800 || code >= 0xe000) {
+      bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+    } else {
+      i += 1;
+      const next = value.charCodeAt(i);
+      code = 0x10000 + (((code & 0x3ff) << 10) | (next & 0x3ff));
+      bytes.push(
+        0xf0 | (code >> 18),
+        0x80 | ((code >> 12) & 0x3f),
+        0x80 | ((code >> 6) & 0x3f),
+        0x80 | (code & 0x3f),
+      );
+    }
   }
   return new Uint8Array(bytes);
 }
@@ -61,8 +84,15 @@ function concatBytes(...parts) {
 
 function randomBytes(length) {
   const bytes = new Uint8Array(length);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes);
+  if (typeof Utilities !== 'undefined' && typeof Utilities.getUuid === 'function') {
+    let offset = 0;
+    while (offset < length) {
+      const hex = Utilities.getUuid().replace(/-/g, '');
+      for (let i = 0; i < hex.length && offset < length; i += 2) {
+        bytes[offset] = parseInt(hex.slice(i, i + 2), 16);
+        offset += 1;
+      }
+    }
     return bytes;
   }
   for (let i = 0; i < length; i += 1) {
@@ -153,7 +183,8 @@ function encryptPayload(plaintext, userPublicKey, authSecret) {
 function signEs256Jwt(header, payload, privateKeyBytes) {
   const unsigned = `${base64Url(utf8Bytes(JSON.stringify(header)))}.${base64Url(utf8Bytes(JSON.stringify(payload)))}`;
   const key = ec.keyFromPrivate(privateKeyBytes);
-  const sig = key.sign(unsigned, { canonical: true });
+  const digest = sha256(utf8Bytes(unsigned));
+  const sig = key.sign(digest, { canonical: true });
   const r = sig.r.toArray('be', 32);
   const s = sig.s.toArray('be', 32);
   const signature = new Uint8Array(64);
@@ -195,17 +226,14 @@ export function buildPushRequest(
   vapidPublicKey,
   vapidPrivateKey,
   payload,
-  subject = 'mailto:planner@b4l.local',
+  subject = 'https://palo124.github.io/fstvalsignup/',
 ) {
   const headers = buildVapidHeaders(subscription, vapidPublicKey, vapidPrivateKey, subject);
   if (!payload) {
     return {
       endpoint: subscription.endpoint,
       method: 'POST',
-      headers: {
-        ...headers,
-        'Content-Length': '0',
-      },
+      headers: { ...headers },
       body: '',
     };
   }
@@ -220,7 +248,6 @@ export function buildPushRequest(
   }
 
   const bodyBytes = encryptPayload(utf8Bytes(payload), userPublicKey, authSecret);
-  const body = Array.from(bodyBytes, (byte) => String.fromCharCode(byte)).join('');
 
   return {
     endpoint: subscription.endpoint,
@@ -229,8 +256,7 @@ export function buildPushRequest(
       ...headers,
       'Content-Encoding': 'aes128gcm',
       'Content-Type': 'application/octet-stream',
-      'Content-Length': String(bodyBytes.length),
     },
-    body,
+    body: Array.from(bodyBytes),
   };
 }

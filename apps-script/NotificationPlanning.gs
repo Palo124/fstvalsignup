@@ -1,0 +1,157 @@
+/**
+ * Notification planning for the Apps Script cron job.
+ * Keep rules aligned with src/domain/notifications.ts and src/config.ts.
+ */
+
+function planNotificationsForUser_(nickname, days, scheduleByDay, preferences, nowMs) {
+  var trimmed = String(nickname || '').trim();
+  if (!trimmed) return [];
+
+  var planned = [];
+  var timeZoneOffset = getFestivalTimeZoneOffset_();
+  var preDawnCutoffMinutes = getPreDawnCutoffMinutes_();
+
+  days.forEach(function(day) {
+    var dayDate = calendarIsoDateForDayLabel_(day);
+    if (!dayDate) return;
+
+    var joined = (scheduleByDay[day] || []).filter(function(item) {
+      return item.attendees.indexOf(trimmed) !== -1;
+    });
+    if (!joined.length) return;
+
+    if (preferences.dailyOpener) {
+      var opener = planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffset);
+      if (opener) planned.push(opener);
+    }
+
+    joined.forEach(function(item) {
+      var start = intervalStartDate_(dayDate, item.time, timeZoneOffset, preDawnCutoffMinutes);
+      var end = intervalEndDate_(dayDate, item.time, timeZoneOffset, preDawnCutoffMinutes);
+
+      if (preferences.nowPlaying && end.getTime() > nowMs) {
+        planned.push({
+          id: 'now:' + day + ':' + item.id,
+          type: 'now_playing',
+          fireAtMs: start.getTime(),
+          title: 'Now playing',
+          body: item.artist + ' · ' + item.stage,
+          tag: 'now-' + item.id,
+        });
+      }
+
+      if (preferences.startsSoon && start.getTime() > nowMs) {
+        var fireAtMs = start.getTime() - preferences.startsSoonLeadMinutes * 60 * 1000;
+        planned.push({
+          id: 'soon:' + day + ':' + item.id,
+          type: 'starts_soon',
+          fireAtMs: fireAtMs,
+          title: 'Your show starts soon',
+          body: item.artist + ' · ' + item.stage + ' · in ' + preferences.startsSoonLeadMinutes + ' min',
+          tag: 'soon-' + item.id,
+        });
+      }
+    });
+  });
+
+  planned.sort(function(left, right) {
+    return left.fireAtMs - right.fireAtMs;
+  });
+
+  return planned;
+}
+
+function dueNotifications_(planned, nowMs, windowMs) {
+  var window = windowMs || 5 * 60 * 1000;
+  return planned.filter(function(notification) {
+    var delta = nowMs - notification.fireAtMs;
+    return delta >= 0 && delta < window;
+  });
+}
+
+function planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffset) {
+  var openerMs = dailyOpenerTimestamp_(dayDate, preferences.dailyOpenerHour, timeZoneOffset);
+  var dueWindowMs = 5 * 60 * 1000;
+  if (openerMs + dueWindowMs <= nowMs) return null;
+
+  var sorted = joined.slice().sort(function(left, right) {
+    return left.time.startMinutes - right.time.startMinutes;
+  });
+  var first = sorted[0];
+  var dayLabel = day.replace(/\s*\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\s*/, '').trim() || day;
+
+  return {
+    id: 'daily:' + dayDate,
+    type: 'daily_opener',
+    fireAtMs: openerMs,
+    title: 'Today: ' + dayLabel,
+    body: joined.length + ' show' + (joined.length === 1 ? '' : 's') + ' on your plan. First up: ' + first.artist + ' at ' + formatClock_(first.time.startMinutes) + '.',
+    tag: 'daily-' + dayDate,
+  };
+}
+
+function dailyOpenerTimestamp_(dayDate, hour, timeZoneOffset) {
+  var hh = String(hour).length === 1 ? '0' + hour : String(hour);
+  return new Date(dayDate + 'T' + hh + ':00:00' + timeZoneOffset).getTime();
+}
+
+function formatClock_(minutes) {
+  var hh = Math.floor(minutes / 60) % 24;
+  var mm = minutes % 60;
+  return pad2_(hh) + ':' + pad2_(mm);
+}
+
+function pad2_(value) {
+  return value < 10 ? '0' + value : String(value);
+}
+
+function calendarIsoDateForDayLabel_(dayLabel) {
+  var match = /(\d{1,2})\.\s*(\d{1,2})\.\s*((?:19|20)\d{2})\b/.exec(String(dayLabel).trim());
+  if (!match) return null;
+
+  var d = Number(match[1]);
+  var m = Number(match[2]);
+  var y = Number(match[3]);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+
+  var date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) {
+    return null;
+  }
+
+  return y + '-' + pad2_(m) + '-' + pad2_(d);
+}
+
+function intervalStartDate_(dayDate, range, timeZoneOffset, preDawnCutoffMinutes) {
+  var base = new Date(dayDate + 'T00:00:00' + timeZoneOffset);
+  var start = addMinutes_(base, range.startMinutes);
+  if (range.startMinutes < preDawnCutoffMinutes) {
+    start.setDate(start.getDate() + 1);
+  }
+  return start;
+}
+
+function intervalEndDate_(dayDate, range, timeZoneOffset, preDawnCutoffMinutes) {
+  var base = new Date(dayDate + 'T00:00:00' + timeZoneOffset);
+  var end = addMinutes_(base, range.endMinutes);
+  if (range.startMinutes < preDawnCutoffMinutes) {
+    end.setDate(end.getDate() + 1);
+  }
+  return end;
+}
+
+function addMinutes_(date, minutes) {
+  var copy = new Date(date.getTime());
+  copy.setMinutes(copy.getMinutes() + minutes);
+  return copy;
+}
+
+function getFestivalTimeZoneOffset_() {
+  // Matches src/config.ts festivalTimeZoneOffset
+  return '+02:00';
+}
+
+function getPreDawnCutoffMinutes_() {
+  // Matches src/config.ts preDawnCutoffMinutes
+  return 5 * 60;
+}
