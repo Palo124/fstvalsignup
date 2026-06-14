@@ -399,6 +399,88 @@ function flushPendingPushNotifications() {
 }
 
 /**
+ * Benchmark planning workload without sending pushes.
+ * Run from the Apps Script editor: benchmarkNotificationProcessing(12)
+ */
+function benchmarkNotificationProcessing(userLimit) {
+  var limit = userLimit || 12;
+  var timings = {};
+  var startedAt = Date.now();
+
+  var stepStartedAt = Date.now();
+  requireVapidKeys_();
+  timings.requireVapidKeysMs = Date.now() - stepStartedAt;
+
+  stepStartedAt = Date.now();
+  var allSubscriptions = readPushSubscriptions_();
+  var subscriptions = allSubscriptions.slice(0, limit);
+  timings.readSubscriptionsMs = Date.now() - stepStartedAt;
+  timings.subscriptionCount = subscriptions.length;
+  timings.totalSubscriptions = allSubscriptions.length;
+
+  invalidateScheduleCache_();
+  stepStartedAt = Date.now();
+  loadScheduleByDay_();
+  timings.loadScheduleColdMs = Date.now() - stepStartedAt;
+
+  stepStartedAt = Date.now();
+  var schedule = loadScheduleByDay_();
+  timings.loadScheduleWarmMs = Date.now() - stepStartedAt;
+  timings.loadScheduleMs = timings.loadScheduleColdMs;
+  timings.dayCount = schedule.days.length;
+
+  stepStartedAt = Date.now();
+  ensureSheetHeaders_(PUSH_SENT_SHEET_, ['notificationId', 'endpoint', 'sentAt']);
+  var sentKeys = readSentNotificationKeys_();
+  timings.readSentKeysMs = Date.now() - stepStartedAt;
+  timings.sentKeyCount = Object.keys(sentKeys).length;
+
+  var nowMs = Date.now();
+  var planAllUsersMs = 0;
+  var plannedNotifications = 0;
+  var dueNow = 0;
+
+  subscriptions.forEach(function(subscription) {
+    stepStartedAt = Date.now();
+    var planned = planNotificationsForUser_(
+      subscription.nickname,
+      schedule.days,
+      schedule.scheduleByDay,
+      subscription.preferences,
+      nowMs,
+    );
+    planAllUsersMs += Date.now() - stepStartedAt;
+    plannedNotifications += planned.length;
+    dueNow += dueNotifications_(planned, nowMs).length;
+  });
+
+  timings.planAllUsersMs = planAllUsersMs;
+  timings.plannedNotifications = plannedNotifications;
+  timings.dueNow = dueNow;
+  timings.totalMs = Date.now() - startedAt;
+  timings.totalWarmMs =
+    timings.requireVapidKeysMs +
+    timings.readSubscriptionsMs +
+    timings.loadScheduleWarmMs +
+    timings.readSentKeysMs +
+    timings.planAllUsersMs;
+
+  var triggerQuotaMs = 90 * 60 * 1000;
+  timings.estimatedDailyMsAt1Min = timings.totalMs * 1440;
+  timings.estimatedDailyMsAt5Min = timings.totalMs * 288;
+  timings.estimatedDailyWarmMsAt1Min = timings.totalWarmMs * 1440;
+  timings.estimatedDailyWarmMsAt5Min = timings.totalWarmMs * 288;
+  timings.triggerQuotaMs = triggerQuotaMs;
+  timings.headroomAt1MinMs = triggerQuotaMs - timings.estimatedDailyMsAt1Min;
+  timings.headroomAt5MinMs = triggerQuotaMs - timings.estimatedDailyMsAt5Min;
+  timings.headroomWarmAt1MinMs = triggerQuotaMs - timings.estimatedDailyWarmMsAt1Min;
+  timings.headroomWarmAt5MinMs = triggerQuotaMs - timings.estimatedDailyWarmMsAt5Min;
+
+  Logger.log(JSON.stringify(timings, null, 2));
+  return timings;
+}
+
+/**
  * Debug helper: see what processScheduledNotifications would plan right now.
  */
 function debugNotificationPlan() {

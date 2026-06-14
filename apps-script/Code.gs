@@ -33,9 +33,10 @@ function doGet(e) {
   if (params.action === 'listDays') {
     payload = listFestivalDays_();
   } else {
+    var activeSheets = getActiveFestivalSheets_();
     var sheet = params.day
-      ? ss.getSheetByName(params.day) || getFestivalSheets_()[0]
-      : getFestivalSheets_()[0];
+      ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName(params.day) || activeSheets[0]
+      : activeSheets[0];
 
     if (!sheet) {
       payload = [];
@@ -61,7 +62,7 @@ function buildJsonOutput_(payload, callback) {
 }
 
 function listFestivalDays_() {
-  return getFestivalSheets_().map(function(sheet) {
+  return getActiveFestivalSheets_().map(function(sheet) {
     return sheet.getName();
   });
 }
@@ -72,13 +73,84 @@ function getFestivalSheets_() {
   });
 }
 
-function loadScheduleByDay_() {
-  var days = listFestivalDays_();
-  var scheduleByDay = {};
-  days.forEach(function(day) {
-    scheduleByDay[day] = readScheduleRows_(day);
+function isArchivedFestivalSheet_(sheetName) {
+  return /OLD/i.test(String(sheetName || ''));
+}
+
+function getActiveFestivalSheets_() {
+  return getFestivalSheets_().filter(function(sheet) {
+    return !isArchivedFestivalSheet_(sheet.getName());
   });
+}
+
+var SCHEDULE_CACHE_PREFIX_ = 'scheduleByDay:v1:';
+var SCHEDULE_CACHE_TTL_SEC_ = 360;
+
+function loadScheduleByDay_() {
+  var sheets = getActiveFestivalSheets_();
+  var days = sheets.map(function(sheet) {
+    return sheet.getName();
+  });
+  if (!days.length) {
+    return { days: [], scheduleByDay: {} };
+  }
+
+  var cache = CacheService.getScriptCache();
+  var scheduleByDay = {};
+  var missingSheets = [];
+
+  days.forEach(function(day) {
+    var cached = cache.get(SCHEDULE_CACHE_PREFIX_ + day);
+    if (cached) {
+      scheduleByDay[day] = JSON.parse(cached);
+      return;
+    }
+    missingSheets.push(day);
+  });
+
+  if (!missingSheets.length) {
+    return { days: days, scheduleByDay: scheduleByDay };
+  }
+
+  sheets.forEach(function(sheet) {
+    var day = sheet.getName();
+    if (missingSheets.indexOf(day) === -1) return;
+
+    var rows = readScheduleRowsFromSheet_(sheet);
+    scheduleByDay[day] = rows;
+    cacheScheduleDay_(cache, day, rows);
+  });
+
   return { days: days, scheduleByDay: scheduleByDay };
+}
+
+function cacheScheduleDay_(cache, day, rows) {
+  var serialized = JSON.stringify(rows);
+  if (serialized.length >= 100000) return;
+
+  cache.put(SCHEDULE_CACHE_PREFIX_ + day, serialized, SCHEDULE_CACHE_TTL_SEC_);
+}
+
+function invalidateScheduleCache_() {
+  var cache = CacheService.getScriptCache();
+  listFestivalDays_().forEach(function(day) {
+    cache.remove(SCHEDULE_CACHE_PREFIX_ + day);
+  });
+}
+
+function readScheduleRowsFromSheet_(sheet) {
+  return readSheetRowsAsObjects_(sheet).map(function(row) {
+    return normalizeScheduleItem_(row, row.rowIndex);
+  }).filter(function(item) {
+    return item !== null;
+  });
+}
+
+function readScheduleRows_(day) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(day);
+  if (!sheet) return [];
+
+  return readScheduleRowsFromSheet_(sheet);
 }
 
 function readSheetRowsAsObjects_(sheet) {
@@ -93,17 +165,6 @@ function readSheetRowsAsObjects_(sheet) {
     });
     obj.rowIndex = index + 2;
     return obj;
-  });
-}
-
-function readScheduleRows_(day) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(day);
-  if (!sheet) return [];
-
-  return readSheetRowsAsObjects_(sheet).map(function(row) {
-    return normalizeScheduleItem_(row, row.rowIndex);
-  }).filter(function(item) {
-    return item !== null;
   });
 }
 
@@ -133,6 +194,7 @@ function toggleAttendance_(sheet, rowIndex, nickname) {
   }
 
   cell.setValue(list.join(', '));
+  invalidateScheduleCache_();
 }
 
 function normalizeScheduleItem_(row, rowIndex) {

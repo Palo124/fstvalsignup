@@ -60,3 +60,15 @@ export function calendarIsoDateMapForDays(
 
   return map;
 }
+
+export function isArchivedFestivalDay(dayLabel: string): boolean {
+  return /OLD/i.test(dayLabel.trim());
+}
+
+export function formatDayTabLabel(dayLabel: string): string {
+  return dayLabel.replace(/\s*OLD\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+}
+
+export function activeFestivalDays(days: string[]): string[] {
+  return days.filter((day) => !isArchivedFestivalDay(day));
+}

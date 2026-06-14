@@ -1,3 +1,4 @@
+import { formatDayTabLabel } from '../domain/festivalDayCalendar';
 import { clear } from './dom';
 
 export interface RenderTabsOptions {
@@ -56,7 +57,7 @@ function renderDayButtons(row: HTMLElement, days: string[], activeDay: string, o
   for (const day of days) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = day;
+    button.textContent = formatDayTabLabel(day);
     button.dataset.day = day;
     button.className = 'day-tab';
 

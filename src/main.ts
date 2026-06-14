@@ -1,7 +1,7 @@
 import './styles.css';
 import { createLineupApi } from './api/lineupApi';
 import { config } from './config';
-import { calendarIsoDateForDayLabel, calendarIsoDateMapForDays } from './domain/festivalDayCalendar';
+import { activeFestivalDays, calendarIsoDateForDayLabel, calendarIsoDateMapForDays } from './domain/festivalDayCalendar';
 import { allAttendees, allStages, normalizeScheduleRows, sortByScheduleTime } from './domain/schedule';
 import { computeOverlaps } from './domain/overlaps';
 import { createAppState } from './state/appState';
@@ -58,7 +58,7 @@ async function bootstrap(): Promise<void> {
   showLoading(elements.schedule);
 
   try {
-    const days = await api.listDays();
+    const days = activeFestivalDays(await api.listDays());
     state.currentDay = days[0] ?? '';
 
     if (!state.currentDay) {

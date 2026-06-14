@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  activeFestivalDays,
   calendarIsoDateForDayLabel,
   calendarIsoDateMapForDays,
+  formatDayTabLabel,
   parseDayLabelToIsoDate,
 } from './festivalDayCalendar';
 
@@ -46,6 +48,20 @@ describe('calendarIsoDateForDayLabel', () => {
         '1.7. 2026 Wednesday': '2099-01-01',
       }),
     ).toBe('2026-07-01');
+  });
+});
+
+describe('activeFestivalDays', () => {
+  it('drops tabs whose names contain OLD', () => {
+    expect(
+      activeFestivalDays(['Thursday 1.7. 2026', 'Friday OLD', 'Saturday 2.7. 2026']),
+    ).toEqual(['Thursday 1.7. 2026', 'Saturday 2.7. 2026']);
+  });
+});
+
+describe('formatDayTabLabel', () => {
+  it('removes OLD from displayed tab labels', () => {
+    expect(formatDayTabLabel('Friday OLD 2.7. 2026')).toBe('Friday 2.7. 2026');
   });
 });
 
