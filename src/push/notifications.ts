@@ -1,6 +1,7 @@
 import { config } from '../config';
 import { defaultNotificationPreferences, type NotificationPreferences } from '../domain/notifications';
 import { loadJson, saveJson, storageKeys } from '../state/storage';
+import { buildNotificationOptions, type RichNotification } from './notificationDisplay';
 
 export interface PushSubscriptionPayload {
   endpoint: string;
@@ -183,18 +184,13 @@ export async function pollPendingNotifications(): Promise<void> {
   if (!response.ok) return;
 
   const payload = (await response.json()) as {
-    notifications?: Array<{ id: string; title: string; body: string; tag: string }>;
+    notifications?: RichNotification[];
   };
   const notifications = payload.notifications ?? [];
   if (!notifications.length) return;
 
   for (const notification of notifications) {
-    await registration.showNotification(notification.title, {
-      body: notification.body,
-      tag: notification.tag,
-      icon: './apple-touch-icon.png',
-      badge: './favicon.png',
-    });
+    await registration.showNotification(notification.title, buildNotificationOptions(notification));
   }
 
   const ackUrl = new URL(config.backendUrl);

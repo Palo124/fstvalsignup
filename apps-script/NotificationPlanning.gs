@@ -1,7 +1,31 @@
 /**
  * Notification planning for the Apps Script cron job.
- * Keep rules aligned with src/domain/notifications.ts and src/config.ts.
+ * Keep rules aligned with src/domain/notifications.ts, src/config.ts, and src/stageColors.ts.
  */
+
+var STAGE_COLORS_ = {
+  'LOVE': '#e07599',
+  'D&B FORGE': '#03A9F4',
+  'HARMONY HOUSE SQUARE': '#4db6ac',
+  'TECHNO DOME': '#ba68c8',
+  'EMPIRE': '#e57373',
+  'FUTURE': '#9570ff',
+};
+
+function colorForStage_(stage) {
+  var trimmed = String(stage || '').trim();
+  if (!trimmed) return '#e07599';
+
+  if (STAGE_COLORS_[trimmed]) return STAGE_COLORS_[trimmed];
+
+  var upper = trimmed.toUpperCase();
+  var keys = Object.keys(STAGE_COLORS_);
+  for (var i = 0; i < keys.length; i += 1) {
+    if (keys[i].toUpperCase() === upper) return STAGE_COLORS_[keys[i]];
+  }
+
+  return '#e07599';
+}
 
 function planNotificationsForUser_(nickname, days, scheduleByDay, preferences, nowMs) {
   var trimmed = String(nickname || '').trim();
@@ -28,15 +52,19 @@ function planNotificationsForUser_(nickname, days, scheduleByDay, preferences, n
     joined.forEach(function(item) {
       var start = intervalStartDate_(dayDate, item.time, timeZoneOffset, preDawnCutoffMinutes);
       var end = intervalEndDate_(dayDate, item.time, timeZoneOffset, preDawnCutoffMinutes);
+      var stageColor = colorForStage_(item.stage);
+      var timeLabel = formatClock_(item.time.startMinutes);
 
       if (preferences.nowPlaying && end.getTime() > nowMs) {
         planned.push({
           id: 'now:' + day + ':' + item.id,
           type: 'now_playing',
           fireAtMs: start.getTime(),
-          title: 'Now playing',
-          body: item.artist + ' · ' + item.stage,
+          title: 'On stage now',
+          body: item.artist + '\n' + item.stage + ' · ' + timeLabel,
           tag: 'now-' + item.id,
+          stage: item.stage,
+          stageColor: stageColor,
         });
       }
 
@@ -46,9 +74,11 @@ function planNotificationsForUser_(nickname, days, scheduleByDay, preferences, n
           id: 'soon:' + day + ':' + item.id,
           type: 'starts_soon',
           fireAtMs: fireAtMs,
-          title: 'Your show starts soon',
-          body: item.artist + ' · ' + item.stage + ' · in ' + preferences.startsSoonLeadMinutes + ' min',
+          title: 'Starting in ' + preferences.startsSoonLeadMinutes + ' min',
+          body: item.artist + '\n' + item.stage + ' · ' + timeLabel,
           tag: 'soon-' + item.id,
+          stage: item.stage,
+          stageColor: stageColor,
         });
       }
     });
@@ -84,9 +114,11 @@ function planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffs
     id: 'daily:' + dayDate,
     type: 'daily_opener',
     fireAtMs: openerMs,
-    title: 'Today: ' + dayLabel,
-    body: joined.length + ' show' + (joined.length === 1 ? '' : 's') + ' on your plan. First up: ' + first.artist + ' at ' + formatClock_(first.time.startMinutes) + '.',
+    title: 'Your lineup · ' + dayLabel,
+    body: joined.length + ' show' + (joined.length === 1 ? '' : 's') + ' today\nFirst up: ' + first.artist + ' at ' + formatClock_(first.time.startMinutes) + ' · ' + first.stage,
     tag: 'daily-' + dayDate,
+    stage: first.stage,
+    stageColor: colorForStage_(first.stage),
   };
 }
 

@@ -1,5 +1,7 @@
 /// <reference lib="webworker" />
 
+import { buildNotificationOptions, type RichNotification } from './push/notificationDisplay';
+
 declare const __SW_BACKEND_URL__: string;
 
 declare const self: ServiceWorkerGlobalScope;
@@ -42,32 +44,29 @@ async function handlePush(event: PushEvent): Promise<void> {
   await ackNotifications(endpoint, pending.map((item) => item.id));
 }
 
-function parsePushData(event: PushEvent): PendingNotification | null {
+function parsePushData(event: PushEvent): RichNotification | null {
   if (!event.data) return null;
 
   try {
-    const parsed = event.data.json() as Partial<PendingNotification>;
+    const parsed = event.data.json() as Partial<RichNotification>;
     if (!parsed.title || !parsed.body) return null;
     return {
       id: parsed.id ?? `inline:${Date.now()}`,
       title: parsed.title,
       body: parsed.body,
       tag: parsed.tag ?? parsed.id ?? 'b4l-notification',
+      stage: parsed.stage,
+      stageColor: parsed.stageColor,
+      type: parsed.type,
     };
   } catch {
     return null;
   }
 }
 
-async function showNotifications(notifications: PendingNotification[]): Promise<void> {
+async function showNotifications(notifications: RichNotification[]): Promise<void> {
   for (const notification of notifications) {
-    await self.registration.showNotification(notification.title, {
-      body: notification.body,
-      tag: notification.tag,
-      icon: './apple-touch-icon.png',
-      badge: './favicon.png',
-      data: { id: notification.id },
-    });
+    await self.registration.showNotification(notification.title, buildNotificationOptions(notification));
   }
 }
 
@@ -91,7 +90,7 @@ async function readStoredEndpoint(): Promise<string | null> {
   return subscription?.endpoint ?? null;
 }
 
-async function fetchPendingNotifications(endpoint: string): Promise<PendingNotification[]> {
+async function fetchPendingNotifications(endpoint: string): Promise<RichNotification[]> {
   const backendUrl = await readBackendUrl();
   const url = new URL(backendUrl);
   url.searchParams.set('action', 'pendingNotifications');
@@ -101,7 +100,7 @@ async function fetchPendingNotifications(endpoint: string): Promise<PendingNotif
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) return [];
 
-  const payload = (await response.json()) as { notifications?: PendingNotification[] };
+  const payload = (await response.json()) as { notifications?: RichNotification[] };
   return payload.notifications ?? [];
 }
 
@@ -121,13 +120,6 @@ async function readBackendUrl(): Promise<string> {
   const response = await cache.match('backend-url');
   if (!response) return DEFAULT_BACKEND;
   return response.text();
-}
-
-interface PendingNotification {
-  id: string;
-  title: string;
-  body: string;
-  tag: string;
 }
 
 export {};

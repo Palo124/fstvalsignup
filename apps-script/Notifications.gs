@@ -132,7 +132,7 @@ function removePushSubscription_(payload) {
 function getPendingNotifications_(endpoint) {
   if (!endpoint) return { notifications: [] };
 
-  ensureSheetHeaders_(PUSH_PENDING_SHEET_, ['endpoint', 'notificationId', 'title', 'body', 'tag', 'createdAt']);
+  ensureSheetHeaders_(PUSH_PENDING_SHEET_, ['endpoint', 'notificationId', 'title', 'body', 'tag', 'createdAt', 'stage', 'stageColor']);
   var sheet = getSheet_(PUSH_PENDING_SHEET_);
   var rows = sheet.getDataRange().getValues();
   var notifications = [];
@@ -144,6 +144,8 @@ function getPendingNotifications_(endpoint) {
       title: rows[i][2],
       body: rows[i][3],
       tag: rows[i][4],
+      stage: rows[i][6] || '',
+      stageColor: rows[i][7] || '',
     });
   }
 
@@ -220,6 +222,9 @@ function sendAndLogPush_(subscription, vapidPublicKey, vapidPrivateKey, notifica
         title: notification.title,
         body: notification.body,
         tag: notification.tag,
+        stage: notification.stage,
+        stageColor: notification.stageColor,
+        type: notification.type,
       })
     : null;
   var response = sendWebPush_(
@@ -258,8 +263,11 @@ function testPushDelivery() {
     var notification = {
       id: 'test:' + Date.now() + ':' + subscription.endpoint.slice(-8),
       title: 'B4L test',
-      body: 'Push delivery works!',
+      body: 'Push delivery works!\nLOVE · 22:00',
       tag: 'b4l-test',
+      stage: 'LOVE',
+      stageColor: '#e07599',
+      type: 'test',
     };
     queuePendingNotification_(subscription.endpoint, notification);
     var status = sendAndLogPush_(
@@ -288,7 +296,7 @@ function testPushDelivery() {
 function flushPendingPushNotifications() {
   var keys = requireVapidKeys_();
 
-  ensureSheetHeaders_(PUSH_PENDING_SHEET_, ['endpoint', 'notificationId', 'title', 'body', 'tag', 'createdAt']);
+  ensureSheetHeaders_(PUSH_PENDING_SHEET_, ['endpoint', 'notificationId', 'title', 'body', 'tag', 'createdAt', 'stage', 'stageColor']);
   var pendingRows = getSheet_(PUSH_PENDING_SHEET_).getDataRange().getValues();
   if (pendingRows.length <= 1) {
     return { ok: true, sent: 0, message: 'No rows in _push_pending' };
@@ -317,6 +325,8 @@ function flushPendingPushNotifications() {
         title: pendingRows[i][2],
         body: pendingRows[i][3],
         tag: pendingRows[i][4],
+        stage: pendingRows[i][6] || '',
+        stageColor: pendingRows[i][7] || '',
       },
     );
     sent += 1;
@@ -384,7 +394,7 @@ function readPushSubscriptions_() {
 }
 
 function queuePendingNotification_(endpoint, notification) {
-  ensureSheetHeaders_(PUSH_PENDING_SHEET_, ['endpoint', 'notificationId', 'title', 'body', 'tag', 'createdAt']);
+  ensureSheetHeaders_(PUSH_PENDING_SHEET_, ['endpoint', 'notificationId', 'title', 'body', 'tag', 'createdAt', 'stage', 'stageColor']);
   var sheet = getSheet_(PUSH_PENDING_SHEET_);
   var rows = sheet.getDataRange().getValues();
 
@@ -401,6 +411,8 @@ function queuePendingNotification_(endpoint, notification) {
     notification.body,
     notification.tag,
     new Date().toISOString(),
+    notification.stage || '',
+    notification.stageColor || '',
   ]);
 }
 

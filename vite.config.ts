@@ -40,21 +40,39 @@ function devServiceWorker(): Plugin {
   };
 }
 
+function bundleServiceWorker(): Plugin {
+  return {
+    name: 'bundle-service-worker',
+    apply: 'build',
+    async closeBundle() {
+      const result = await esbuild.build({
+        entryPoints: [path.join(root, 'src/sw.ts')],
+        bundle: true,
+        format: 'iife',
+        platform: 'browser',
+        target: ['es2017'],
+        write: false,
+        define: {
+          __SW_BACKEND_URL__: JSON.stringify(gasBackendUrl),
+        },
+      });
+
+      const fs = await import('node:fs');
+      fs.writeFileSync(path.join(root, 'dist/sw.js'), result.outputFiles[0].text);
+    },
+  };
+}
+
 export default defineConfig({
   base: './',
   define: {
     __SW_BACKEND_URL__: JSON.stringify(gasBackendUrl),
   },
-  plugins: [devServiceWorker()],
+  plugins: [devServiceWorker(), bundleServiceWorker()],
   build: {
     rollupOptions: {
       input: {
         main: 'index.html',
-        sw: 'src/sw.ts',
-      },
-      output: {
-        entryFileNames: (chunk) => (chunk.name === 'sw' ? 'sw.js' : 'assets/[name]-[hash].js'),
-        manualChunks: undefined,
       },
     },
   },
