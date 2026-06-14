@@ -7,14 +7,14 @@ const deploymentFile = path.join(root, '.gas-deployment.json');
 const generatedUrlFile = path.join(root, 'src/gas-backend-url.generated.ts');
 const deployDescription = 'Lineup planner API';
 
-function run(command, args, { capture = false } = {}) {
+function run(command, args, { capture = false, allowFailure = false } = {}) {
   const result = spawnSync(command, args, {
     cwd: root,
     encoding: 'utf8',
     stdio: capture ? ['inherit', 'pipe', 'pipe'] : 'inherit',
   });
 
-  if (result.status !== 0) {
+  if (result.status !== 0 && !allowFailure) {
     if (capture) {
       if (result.stdout) process.stdout.write(result.stdout);
       if (result.stderr) process.stderr.write(result.stderr);
@@ -23,6 +23,14 @@ function run(command, args, { capture = false } = {}) {
   }
 
   return result;
+}
+
+function claspOutput(result) {
+  return `${result.stdout ?? ''}${result.stderr ?? ''}`;
+}
+
+function runClasp(args, options = {}) {
+  return run('npx', ['clasp', ...args], options);
 }
 
 function readStoredDeployment() {
@@ -34,6 +42,39 @@ function readStoredDeployment() {
   } catch {
     return null;
   }
+}
+
+function listDeployments() {
+  const result = runClasp(['deployments'], { capture: true, allowFailure: true });
+  const output = claspOutput(result);
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+
+  const deployments = [];
+  for (const line of output.split('\n')) {
+    const match = line.match(/^- ([^\s]+) @(HEAD|\d+)(?: - (.+))?$/);
+    if (!match) continue;
+    deployments.push({
+      deploymentId: match[1],
+      version: match[2],
+      description: match[3]?.trim() ?? '',
+    });
+  }
+
+  return deployments;
+}
+
+function chooseDeploymentId(storedId, deployments) {
+  if (storedId && deployments.some((entry) => entry.deploymentId === storedId)) {
+    return storedId;
+  }
+
+  const byDescription = deployments.find((entry) => entry.description === deployDescription);
+  return byDescription?.deploymentId ?? null;
+}
+
+function isMissingDeploymentError(output) {
+  return /requested entity was not found|404|deployment.*not found/i.test(output);
 }
 
 function parseDeploymentId(output) {
@@ -58,24 +99,45 @@ function writeBackendUrl(deploymentId) {
   return backendUrl;
 }
 
+function deployWithClasp(deploymentId) {
+  const args = ['deploy', '--description', deployDescription];
+  if (deploymentId) args.push('--deploymentId', deploymentId);
+
+  const result = runClasp(args, { capture: true, allowFailure: true });
+  const output = claspOutput(result);
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+
+  return { result, output };
+}
+
 console.log('Building and pushing Apps Script…');
 run('npm', ['run', 'gas:push']);
 
 const storedDeploymentId = readStoredDeployment();
-const deployArgs = ['clasp', 'deploy', '--description', deployDescription];
-if (storedDeploymentId) {
-  deployArgs.push('--deploymentId', storedDeploymentId);
-  console.log(`Redeploying ${storedDeploymentId}…`);
+const deployments = listDeployments();
+let deploymentId = chooseDeploymentId(storedDeploymentId, deployments);
+
+if (deploymentId) {
+  console.log(`Redeploying ${deploymentId}…`);
+} else if (storedDeploymentId) {
+  console.log(`Stored deployment ${storedDeploymentId} was not found; creating a new one…`);
 } else {
   console.log('Creating new deployment…');
 }
 
-const deployResult = run('npx', deployArgs, { capture: true });
-const deployOutput = `${deployResult.stdout ?? ''}${deployResult.stderr ?? ''}`;
-if (deployResult.stdout) process.stdout.write(deployResult.stdout);
-if (deployResult.stderr) process.stderr.write(deployResult.stderr);
+let { result, output } = deployWithClasp(deploymentId);
 
-const parsed = parseDeploymentId(deployOutput);
+if (result.status !== 0 && deploymentId && isMissingDeploymentError(output)) {
+  console.warn('Deployment update failed; creating a new deployment instead…');
+  ({ result, output } = deployWithClasp(null));
+}
+
+if (result.status !== 0) {
+  process.exit(result.status ?? 1);
+}
+
+const parsed = parseDeploymentId(output);
 if (!parsed) {
   console.error('Could not parse deployment ID from clasp output.');
   process.exit(1);
