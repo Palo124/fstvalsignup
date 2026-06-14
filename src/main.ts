@@ -59,6 +59,7 @@ async function bootstrap(): Promise<void> {
 
   try {
     const days = await api.listDays();
+    state.days = days;
     state.currentDay = days[0] ?? '';
 
     if (!state.currentDay) {
@@ -66,34 +67,69 @@ async function bootstrap(): Promise<void> {
       return;
     }
 
-    renderDayTabs(days);
+    renderDayTabs();
     await loadSchedule(state.currentDay);
+    prefetchSchedules(days, state.currentDay);
   } catch (error) {
     showError(elements.schedule, error);
   }
 }
 
-async function selectDay(day: string, days: string[]): Promise<void> {
+async function selectDay(day: string): Promise<void> {
   state.currentDay = day;
-  renderDayTabs(days);
+  renderDayTabs();
   await loadSchedule(day);
 }
 
 async function loadSchedule(day: string): Promise<void> {
-  showLoading(elements.schedule);
+  const cached = state.scheduleByDay.get(day);
+  if (cached) {
+    state.schedule = cached;
+    renderCurrentSchedule();
+  } else {
+    showLoading(elements.schedule);
+  }
 
   try {
     const rows = await api.getSchedule(day);
-    state.schedule = sortByScheduleTime(
-      normalizeScheduleRows(rows),
-      config.preDawnCutoffMinutes,
-    );
-
-    populateFilterOptions(elements, allAttendees(state.schedule), allStages(state.schedule));
-    renderCurrentSchedule();
-    void syncPushSubscription(readNickname(elements));
+    applyScheduleRows(day, rows);
   } catch (error) {
-    showError(elements.schedule, error);
+    if (!cached) {
+      showError(elements.schedule, error);
+    }
+  }
+}
+
+function applyScheduleRows(day: string, rows: Parameters<typeof normalizeScheduleRows>[0]): void {
+  const schedule = sortByScheduleTime(
+    normalizeScheduleRows(rows),
+    config.preDawnCutoffMinutes,
+  );
+
+  state.schedule = schedule;
+  state.scheduleByDay.set(day, schedule);
+  populateFilterOptions(elements, allAttendees(schedule), allStages(schedule));
+  renderCurrentSchedule();
+  void syncPushSubscription(readNickname(elements));
+}
+
+function prefetchSchedules(days: string[], activeDay: string): void {
+  for (const day of days) {
+    if (day === activeDay || state.scheduleByDay.has(day)) {
+      continue;
+    }
+
+    void api.getSchedule(day).then((rows) => {
+      if (state.scheduleByDay.has(day)) {
+        return;
+      }
+
+      const schedule = sortByScheduleTime(
+        normalizeScheduleRows(rows),
+        config.preDawnCutoffMinutes,
+      );
+      state.scheduleByDay.set(day, schedule);
+    });
   }
 }
 
@@ -126,6 +162,17 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
 
   const button = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : null;
   const originalText = button?.textContent ?? '';
+  const isAttending = item.attendees.includes(state.nickname);
+  const optimisticAttendees = isAttending
+    ? item.attendees.filter((attendee) => attendee !== state.nickname)
+    : [...item.attendees, state.nickname];
+  const previousSchedule = state.schedule;
+
+  state.schedule = state.schedule.map((show) =>
+    show.id === item.id ? { ...show, attendees: optimisticAttendees } : show,
+  );
+  state.scheduleByDay.set(state.currentDay, state.schedule);
+  renderCurrentSchedule();
 
   if (button) {
     button.disabled = true;
@@ -139,17 +186,15 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
       nickname: state.nickname,
     });
 
-    state.schedule = sortByScheduleTime(
-      normalizeScheduleRows(rows),
-      config.preDawnCutoffMinutes,
-    );
-    populateFilterOptions(elements, allAttendees(state.schedule), allStages(state.schedule));
-    renderCurrentSchedule();
+    applyScheduleRows(state.currentDay, rows);
     if (loadJson(storageKeys.notificationsEnabled, false)) {
       void syncPushSubscription(state.nickname);
     }
   } catch (error) {
-    showError(elements.schedule, error);
+    state.schedule = previousSchedule;
+    state.scheduleByDay.set(state.currentDay, previousSchedule);
+    renderCurrentSchedule();
+    alert(error instanceof Error ? error.message : 'Could not update attendance.');
     if (button) {
       button.disabled = false;
       button.textContent = originalText;
@@ -157,15 +202,15 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
   }
 }
 
-function renderDayTabs(days: string[]): void {
+function renderDayTabs(): void {
   renderTabs(
     elements.tabs,
-    days,
+    state.days,
     state.currentDay,
     (day) => {
-      void selectDay(day, days);
+      void selectDay(day);
     },
-    { datesByDay: calendarIsoDateMapForDays(days, config.dayToDate) },
+    { datesByDay: calendarIsoDateMapForDays(state.days, config.dayToDate) },
   );
 }
 

@@ -17,23 +17,33 @@ export function createLineupApi(baseUrl: string): LineupApi {
     listDays: () => request<string[]>(baseUrl, { action: 'listDays' }),
     getSchedule: (day) => request<RawScheduleRow[]>(baseUrl, { day }),
     toggleAttendance: ({ day, rowIndex, nickname }) =>
-      request<RawScheduleRow[]>(baseUrl, {
-        action: 'toggle',
-        day,
-        rowIndex: String(rowIndex),
-        nickname,
-      }),
+      request<RawScheduleRow[]>(
+        baseUrl,
+        {
+          action: 'toggle',
+          day,
+          rowIndex: String(rowIndex),
+          nickname,
+        },
+        { bustCache: true },
+      ),
   };
 }
 
-async function request<T>(baseUrl: string, params: Record<string, string>): Promise<T> {
+async function request<T>(
+  baseUrl: string,
+  params: Record<string, string>,
+  options?: { bustCache?: boolean },
+): Promise<T> {
   const url = new URL(baseUrl);
 
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
   }
 
-  url.searchParams.set('nocache', String(Date.now()));
+  if (options?.bustCache) {
+    url.searchParams.set('nocache', String(Date.now()));
+  }
 
   const response = await fetch(url, {
     method: 'GET',

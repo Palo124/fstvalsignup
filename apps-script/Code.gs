@@ -12,7 +12,7 @@
  *   action=pendingNotifications&endpoint
  *   action=ackNotifications&endpoint&ids
  *
- * Time-driven trigger: processScheduledNotifications (every 5 minutes)
+ * Time-driven trigger: processScheduledNotifications (every 2.5 minutes via 1-minute carrier)
  *
  * Script properties:
  *   VAPID_PUBLIC_KEY
@@ -43,7 +43,7 @@ function doGet(e) {
       toggleAttendance_(sheet, Number(params.rowIndex), params.nickname);
       payload = readSheetPayload_(sheet);
     } else {
-      payload = readSheetPayload_(sheet);
+      payload = readCachedSheetPayload_(sheet);
     }
   }
 
@@ -61,9 +61,17 @@ function buildJsonOutput_(payload, callback) {
 }
 
 function listFestivalDays_() {
-  return getFestivalSheets_().map(function(sheet) {
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get(FESTIVAL_DAYS_CACHE_KEY_);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  var days = getFestivalSheets_().map(function(sheet) {
     return sheet.getName();
   });
+  cache.put(FESTIVAL_DAYS_CACHE_KEY_, JSON.stringify(days), SCHEDULE_CACHE_TTL_SEC_);
+  return days;
 }
 
 function getFestivalSheets_() {
@@ -83,7 +91,9 @@ function getActiveFestivalSheets_() {
 }
 
 var SCHEDULE_CACHE_PREFIX_ = 'scheduleByDay:v1:';
-var SCHEDULE_CACHE_TTL_SEC_ = 360;
+var RAW_SHEET_CACHE_PREFIX_ = 'rawSheet:v1:';
+var FESTIVAL_DAYS_CACHE_KEY_ = 'festivalDays:v1';
+var SCHEDULE_CACHE_TTL_SEC_ = 240;
 
 function loadScheduleByDay_() {
   var sheets = getActiveFestivalSheets_();
@@ -131,10 +141,45 @@ function cacheScheduleDay_(cache, day, rows) {
 }
 
 function invalidateScheduleCache_() {
+  invalidateSheetCaches_();
+}
+
+function invalidateSheetCaches_(day) {
   var cache = CacheService.getScriptCache();
-  listFestivalDays_().forEach(function(day) {
+
+  if (day) {
     cache.remove(SCHEDULE_CACHE_PREFIX_ + day);
+    cache.remove(RAW_SHEET_CACHE_PREFIX_ + day);
+    return;
+  }
+
+  listFestivalDaysFromSheets_().forEach(function(sheetDay) {
+    cache.remove(SCHEDULE_CACHE_PREFIX_ + sheetDay);
+    cache.remove(RAW_SHEET_CACHE_PREFIX_ + sheetDay);
   });
+  cache.remove(FESTIVAL_DAYS_CACHE_KEY_);
+}
+
+function listFestivalDaysFromSheets_() {
+  return getFestivalSheets_().map(function(sheet) {
+    return sheet.getName();
+  });
+}
+
+function readCachedSheetPayload_(sheet) {
+  var day = sheet.getName();
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get(RAW_SHEET_CACHE_PREFIX_ + day);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  var payload = readSheetPayload_(sheet);
+  var serialized = JSON.stringify(payload);
+  if (serialized.length < 100000) {
+    cache.put(RAW_SHEET_CACHE_PREFIX_ + day, serialized, SCHEDULE_CACHE_TTL_SEC_);
+  }
+  return payload;
 }
 
 function readScheduleRowsFromSheet_(sheet) {
@@ -193,7 +238,7 @@ function toggleAttendance_(sheet, rowIndex, nickname) {
   }
 
   cell.setValue(list.join(', '));
-  invalidateScheduleCache_();
+  invalidateSheetCaches_(sheet.getName());
 }
 
 function normalizeScheduleItem_(row, rowIndex) {

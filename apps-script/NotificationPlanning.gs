@@ -3,6 +3,33 @@
  * Keep rules aligned with src/domain/notifications.ts, src/config.ts, and src/stageColors.ts.
  */
 
+var NOTIFICATION_CRON_INTERVAL_MS_ = 2.5 * 60 * 1000;
+var NOTIFICATION_DUE_WINDOW_MS_ = 3 * 60 * 1000;
+var NOTIFICATION_CRON_SLOT_PROP_ = 'notificationCronSlot_';
+
+function getNotificationCronIntervalMs_() {
+  return NOTIFICATION_CRON_INTERVAL_MS_;
+}
+
+function getNotificationDueWindowMs_() {
+  return NOTIFICATION_DUE_WINDOW_MS_;
+}
+
+function notificationCronRunsPerDay_() {
+  return Math.floor((24 * 60 * 60 * 1000) / NOTIFICATION_CRON_INTERVAL_MS_);
+}
+
+function shouldRunNotificationCron_(nowMs) {
+  var slot = Math.floor((nowMs || Date.now()) / NOTIFICATION_CRON_INTERVAL_MS_);
+  var props = PropertiesService.getScriptProperties();
+  var lastSlot = props.getProperty(NOTIFICATION_CRON_SLOT_PROP_);
+  if (lastSlot === String(slot)) {
+    return false;
+  }
+  props.setProperty(NOTIFICATION_CRON_SLOT_PROP_, String(slot));
+  return true;
+}
+
 var STAGE_COLORS_ = {
   'LOVE': '#e07599',
   'D&B FORGE': '#03A9F4',
@@ -92,7 +119,7 @@ function planNotificationsForUser_(nickname, days, scheduleByDay, preferences, n
 }
 
 function dueNotifications_(planned, nowMs, windowMs) {
-  var window = windowMs || 5 * 60 * 1000;
+  var window = windowMs || getNotificationDueWindowMs_();
   return planned.filter(function(notification) {
     var delta = nowMs - notification.fireAtMs;
     return delta >= 0 && delta < window;
@@ -101,7 +128,7 @@ function dueNotifications_(planned, nowMs, windowMs) {
 
 function planDailyOpener_(day, dayDate, joined, preferences, nowMs, timeZoneOffset) {
   var openerMs = dailyOpenerTimestamp_(dayDate, preferences.dailyOpenerHour, timeZoneOffset);
-  var dueWindowMs = 5 * 60 * 1000;
+  var dueWindowMs = getNotificationDueWindowMs_();
   if (openerMs + dueWindowMs <= nowMs) return null;
 
   return buildDailyOpenerNotification_(day, dayDate, joined, openerMs);

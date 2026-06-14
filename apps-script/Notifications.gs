@@ -173,6 +173,8 @@ function ackNotifications_(payload) {
 }
 
 function processScheduledNotifications() {
+  if (!shouldRunNotificationCron_()) return;
+
   var keys = requireVapidKeys_();
   var subscriptions = readPushSubscriptions_();
   if (!subscriptions.length) return;
@@ -466,15 +468,13 @@ function benchmarkNotificationProcessing(userLimit) {
     timings.planAllUsersMs;
 
   var triggerQuotaMs = 90 * 60 * 1000;
-  timings.estimatedDailyMsAt1Min = timings.totalMs * 1440;
-  timings.estimatedDailyMsAt5Min = timings.totalMs * 288;
-  timings.estimatedDailyWarmMsAt1Min = timings.totalWarmMs * 1440;
-  timings.estimatedDailyWarmMsAt5Min = timings.totalWarmMs * 288;
+  var runsPerDay = notificationCronRunsPerDay_();
+  timings.effectiveCronIntervalMin = NOTIFICATION_CRON_INTERVAL_MS_ / 60000;
+  timings.estimatedDailyMs = timings.totalMs * runsPerDay;
+  timings.estimatedDailyWarmMs = timings.totalWarmMs * runsPerDay;
   timings.triggerQuotaMs = triggerQuotaMs;
-  timings.headroomAt1MinMs = triggerQuotaMs - timings.estimatedDailyMsAt1Min;
-  timings.headroomAt5MinMs = triggerQuotaMs - timings.estimatedDailyMsAt5Min;
-  timings.headroomWarmAt1MinMs = triggerQuotaMs - timings.estimatedDailyWarmMsAt1Min;
-  timings.headroomWarmAt5MinMs = triggerQuotaMs - timings.estimatedDailyWarmMsAt5Min;
+  timings.headroomMs = triggerQuotaMs - timings.estimatedDailyMs;
+  timings.headroomWarmMs = triggerQuotaMs - timings.estimatedDailyWarmMs;
 
   Logger.log(JSON.stringify(timings, null, 2));
   return timings;
@@ -632,7 +632,7 @@ function deleteRowsByColumnValue_(sheetName, columnIndex, value) {
 }
 
 /**
- * Creates the 5-minute notification trigger if missing.
+ * Creates the 1-minute carrier trigger for 2.5-minute notification processing.
  * Called automatically on first push subscription save.
  * Can also be run manually from the Apps Script editor.
  */
@@ -641,19 +641,30 @@ function setupTriggers() {
   return { ok: true, triggerInstalled: triggerInstalled };
 }
 
+var NOTIFICATION_TRIGGER_VERSION_ = '2';
+
 function ensureNotificationTrigger_() {
-  var triggers = ScriptApp.getProjectTriggers();
-  var exists = triggers.some(function(trigger) {
-    return trigger.getHandlerFunction() === 'processScheduledNotifications';
+  var handler = 'processScheduledNotifications';
+  var props = PropertiesService.getScriptProperties();
+  var version = props.getProperty('notificationTriggerVersion_');
+  var hasTrigger = ScriptApp.getProjectTriggers().some(function(trigger) {
+    return trigger.getHandlerFunction() === handler;
   });
 
-  if (!exists) {
-    ScriptApp.newTrigger('processScheduledNotifications')
-      .timeBased()
-      .everyMinutes(5)
-      .create();
-    return true;
+  if (version === NOTIFICATION_TRIGGER_VERSION_ && hasTrigger) {
+    return false;
   }
 
-  return false;
+  ScriptApp.getProjectTriggers().forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === handler) {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  ScriptApp.newTrigger(handler)
+    .timeBased()
+    .everyMinutes(1)
+    .create();
+  props.setProperty('notificationTriggerVersion_', NOTIFICATION_TRIGGER_VERSION_);
+  return true;
 }
