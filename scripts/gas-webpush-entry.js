@@ -234,7 +234,3 @@ export function buildPushRequest(
     body,
   };
 }
-
-export function buildEmptyPushRequest(subscription, vapidPublicKey, vapidPrivateKey, subject = 'mailto:planner@b4l.local') {
-  return buildPushRequest(subscription, vapidPublicKey, vapidPrivateKey, null, subject);
-}
