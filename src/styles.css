@@ -807,16 +807,16 @@ button.leave {
 
 #site-footer {
   text-align: center;
-  padding: 1.35em 1em 1.5em;
+  padding: 1.25em 1em 1.35em;
   margin-top: 0.75em;
   font-size: 0.95em;
   line-height: 1.4;
   background: rgba(0, 0, 0, 0.05);
   color: var(--text);
   border-top: 1px solid var(--control-border);
-  --slogan-c1: #ff006e;
-  --slogan-c2: #8338ec;
-  --slogan-c3: #3a86ff;
+  --slogan-accent-light: #0066cc;
+  --slogan-accent-dark: #6eb5ff;
+  --slogan-accent: var(--slogan-accent-light);
 }
 
 #site-footer p {
@@ -824,9 +824,9 @@ button.leave {
 }
 
 #site-footer .footer-slogan {
-  font-size: 1.22em;
-  letter-spacing: 0.07em;
-  margin-bottom: 0.45em;
+  font-size: 1.08em;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4em;
   text-transform: uppercase;
 }
 
@@ -834,45 +834,17 @@ button.leave {
   display: inline-block;
   font-weight: 700;
   max-width: 22em;
-  background: linear-gradient(
-    110deg,
-    var(--slogan-c1) 0%,
-    var(--slogan-c2) 45%,
-    var(--slogan-c3) 90%
-  );
-  background-size: 220% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: footer-slogan-shine 5s linear infinite, footer-slogan-pop 0.55s ease-out both;
-  filter: drop-shadow(0 0 0.35em color-mix(in srgb, var(--slogan-c2) 35%, transparent));
+  color: var(--slogan-accent);
 }
 
-@keyframes footer-slogan-shine {
-  to {
-    background-position: 220% center;
-  }
-}
-
-@keyframes footer-slogan-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.92) translateY(0.2em);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+body.dark #site-footer {
+  background: rgba(255, 255, 255, 0.05);
+  --slogan-accent: var(--slogan-accent-dark);
 }
 
 #site-footer .footer-note {
   font-size: 0.85em;
   opacity: 0.85;
-}
-
-body.dark #site-footer {
-  background: rgba(255, 255, 255, 0.05);
 }
 
 body:not(.dark) #logo-title img {
