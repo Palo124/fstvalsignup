@@ -21,6 +21,7 @@ import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
 import type { AppView } from './ui/viewTabs';
 import { initFooterSlogan } from './ui/footerSlogan';
+import { initStickyNav } from './ui/stickyNav';
 import { applyTheme, bindSystemTheme } from './ui/theme';
 import { pollPendingNotifications, registerServiceWorker, syncPushSubscription } from './push/notifications';
 import { loadJson, storageKeys } from './state/storage';
@@ -28,6 +29,7 @@ import type { ScheduleItem } from './types/schedule';
 
 const api = createLineupApi(config.backendUrl);
 initFooterSlogan();
+initStickyNav();
 const elements = getElements();
 const initialControls = initControls(elements, renderCurrentView, applyTheme);
 const state = createAppState(initialControls.nickname);

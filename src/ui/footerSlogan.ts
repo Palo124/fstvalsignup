@@ -63,13 +63,60 @@ const SLOGAN_ACCENTS = [
   { light: '#c2410c', dark: '#fb923c' },
 ] as const;
 
-export function initFooterSlogan(): void {
-  const footer = getRequiredElement('site-footer', HTMLElement);
-  const sloganEl = getRequiredElement('footer-slogan', HTMLElement);
-  const accent = SLOGAN_ACCENTS[Math.floor(Math.random() * SLOGAN_ACCENTS.length)];
-  const slogan = FESTIVAL_SLOGANS[Math.floor(Math.random() * FESTIVAL_SLOGANS.length)];
+function pickRandomIndex(length: number, exclude?: number): number {
+  if (length <= 1) {
+    return 0;
+  }
+
+  let index = Math.floor(Math.random() * length);
+  while (index === exclude) {
+    index = Math.floor(Math.random() * length);
+  }
+
+  return index;
+}
+
+function applyRandomSlogan(
+  footer: HTMLElement,
+  sloganEl: HTMLElement,
+  previous?: { sloganIndex: number; accentIndex: number },
+): { sloganIndex: number; accentIndex: number } {
+  const sloganIndex = pickRandomIndex(FESTIVAL_SLOGANS.length, previous?.sloganIndex);
+  const accentIndex = pickRandomIndex(SLOGAN_ACCENTS.length, previous?.accentIndex);
+  const accent = SLOGAN_ACCENTS[accentIndex];
 
   footer.style.setProperty('--slogan-accent-light', accent.light);
   footer.style.setProperty('--slogan-accent-dark', accent.dark);
-  sloganEl.textContent = slogan;
+  sloganEl.textContent = FESTIVAL_SLOGANS[sloganIndex];
+
+  return { sloganIndex, accentIndex };
+}
+
+export function initFooterSlogan(): void {
+  const footer = getRequiredElement('site-footer', HTMLElement);
+  const sloganEl = getRequiredElement('footer-slogan', HTMLElement);
+  const sloganContainer = sloganEl.closest('.footer-slogan');
+
+  if (!(sloganContainer instanceof HTMLElement)) {
+    throw new Error('Footer slogan container not found');
+  }
+
+  let current = applyRandomSlogan(footer, sloganEl);
+
+  sloganContainer.classList.add('footer-slogan--interactive');
+  sloganContainer.setAttribute('role', 'button');
+  sloganContainer.setAttribute('tabindex', '0');
+  sloganContainer.setAttribute('aria-label', 'Show another festival slogan');
+
+  const showNextSlogan = (): void => {
+    current = applyRandomSlogan(footer, sloganEl, current);
+  };
+
+  sloganContainer.addEventListener('click', showNextSlogan);
+  sloganContainer.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      showNextSlogan();
+    }
+  });
 }
