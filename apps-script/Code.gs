@@ -33,10 +33,9 @@ function doGet(e) {
   if (params.action === 'listDays') {
     payload = listFestivalDays_();
   } else {
-    var activeSheets = getActiveFestivalSheets_();
     var sheet = params.day
-      ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName(params.day) || activeSheets[0]
-      : activeSheets[0];
+      ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName(params.day) || getFestivalSheets_()[0]
+      : getFestivalSheets_()[0];
 
     if (!sheet) {
       payload = [];
@@ -62,7 +61,7 @@ function buildJsonOutput_(payload, callback) {
 }
 
 function listFestivalDays_() {
-  return getActiveFestivalSheets_().map(function(sheet) {
+  return getFestivalSheets_().map(function(sheet) {
     return sheet.getName();
   });
 }
