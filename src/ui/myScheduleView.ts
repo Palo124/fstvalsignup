@@ -20,6 +20,7 @@ interface RenderMyScheduleInput {
   filters: ScheduleFilters;
   overlaps: OverlapMap;
   currentUser: string;
+  dayKey: string;
   dayDate: string | undefined;
   timeZoneOffset: string;
   preDawnCutoffMinutes: number;
@@ -29,8 +30,17 @@ interface RenderMyScheduleInput {
 
 const PX_PER_MINUTE = 2.5;
 const STAGE_COLUMN_MIN_WIDTH = 88;
+const scrollStateByDay = new Map<string, { top: number; left: number }>();
 
 export function renderMySchedule(input: RenderMyScheduleInput): void {
+  const existingScroll = input.container.querySelector<HTMLElement>('.my-schedule-scroll');
+  if (existingScroll) {
+    scrollStateByDay.set(input.dayKey, {
+      top: existingScroll.scrollTop,
+      left: existingScroll.scrollLeft,
+    });
+  }
+
   clear(input.container);
 
   const filteredItems = applyScheduleFilters(
@@ -91,6 +101,23 @@ export function renderMySchedule(input: RenderMyScheduleInput): void {
   scroll.appendChild(grid);
   wrapper.appendChild(scroll);
   input.container.appendChild(wrapper);
+
+  const savedScroll = scrollStateByDay.get(input.dayKey);
+  if (savedScroll) {
+    scroll.scrollTop = savedScroll.top;
+    scroll.scrollLeft = savedScroll.left;
+  }
+
+  scroll.addEventListener(
+    'scroll',
+    () => {
+      scrollStateByDay.set(input.dayKey, {
+        top: scroll.scrollTop,
+        left: scroll.scrollLeft,
+      });
+    },
+    { passive: true },
+  );
 }
 
 function renderCorner(): HTMLElement {
@@ -237,7 +264,7 @@ function renderBlock(
   element.type = 'button';
   element.className = 'my-schedule-block';
   element.style.top = `${(block.start - dayBounds.start) * PX_PER_MINUTE}px`;
-  element.style.height = `${Math.max((block.end - block.start) * PX_PER_MINUTE, 22)}px`;
+  element.style.height = `${Math.max((block.end - block.start) * PX_PER_MINUTE, 28)}px`;
 
   const stageColor = colorForStage(block.item.stage);
   if (stageColor) {

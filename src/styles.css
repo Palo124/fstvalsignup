@@ -881,6 +881,8 @@ body.dark .my-schedule-legend {
 
 .my-schedule-scroll {
   overflow: auto;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
   max-height: min(72vh, 900px);
   border: 1px solid var(--control-border);
   border-radius: 12px;
@@ -1045,7 +1047,7 @@ body.dark .my-schedule-free-window {
   font: inherit;
   color: inherit;
   background: transparent;
-  min-height: 22px;
+  min-height: 28px;
 }
 
 .my-schedule-block:hover {
@@ -1059,9 +1061,9 @@ body.dark .my-schedule-free-window {
 
 .my-schedule-block-artist {
   width: 100%;
-  font-size: 0.58em;
+  font-size: 0.74em;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1069,9 +1071,9 @@ body.dark .my-schedule-free-window {
 
 .my-schedule-block-time {
   width: 100%;
-  margin-top: 0.08rem;
-  font-size: 0.52em;
-  line-height: 1.1;
+  margin-top: 0.1rem;
+  font-size: 0.66em;
+  line-height: 1.15;
   opacity: 0.85;
   white-space: nowrap;
   overflow: hidden;

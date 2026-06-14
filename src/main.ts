@@ -149,6 +149,7 @@ function renderCurrentView(): void {
       filters: readMyScheduleFilters(elements),
       overlaps: computeOverlaps(state.schedule, state.nickname, config.preDawnCutoffMinutes),
       currentUser: state.nickname,
+      dayKey: state.currentDay,
       dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
       timeZoneOffset: config.festivalTimeZoneOffset,
       preDawnCutoffMinutes: config.preDawnCutoffMinutes,
