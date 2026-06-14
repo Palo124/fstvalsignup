@@ -285,6 +285,10 @@ input:checked + .slider::before {
   transition: border-color 0.2s;
 }
 
+.card.collision-open {
+  z-index: 50;
+}
+
 .card:hover {
   border-color: #ffffffcc;
   background: rgba(255, 255, 255, 0.05);
@@ -413,7 +417,11 @@ input:checked + .slider::before {
   border-radius: 12px;
   background: var(--card-bg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  z-index: 3;
+  z-index: 1;
+}
+
+.card.collision-open .tag-container {
+  z-index: 2;
 }
 
 .collision-popover-item {

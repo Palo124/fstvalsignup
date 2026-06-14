@@ -188,6 +188,18 @@ function renderCollisionTag(partners: OverlapPartner[]): HTMLElement {
   });
 
   details.append(summary, popover);
+  details.addEventListener('toggle', () => {
+    if (details.open) {
+      document.querySelectorAll<HTMLDetailsElement>('.collision-details[open]').forEach((openDetails) => {
+        if (openDetails !== details) {
+          openDetails.open = false;
+        }
+      });
+    }
+
+    const card = details.closest('.card');
+    card?.classList.toggle('collision-open', details.open);
+  });
   wrap.appendChild(details);
   return wrap;
 }
