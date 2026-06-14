@@ -1,9 +1,10 @@
 /// <reference lib="webworker" />
 
+import { gasBackendUrl } from './gas-backend-url.generated';
+
 declare const self: ServiceWorkerGlobalScope;
 
-const DEFAULT_BACKEND =
-  'https://script.google.com/macros/s/AKfycbxmGd0_jjD1znuizGRf-rbAqyAOTDobxbzURac4e-962J3WOyROaATc4qWYe7onsLfG6Q/exec';
+const DEFAULT_BACKEND = gasBackendUrl;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting());
