@@ -34,14 +34,15 @@ body:not(.dark) {
 body {
   font-family: 'Poppins', sans-serif;
   margin: 0;
-  padding: 1em;
-  padding-top: max(1em, env(safe-area-inset-top));
-  padding-right: max(1em, env(safe-area-inset-right));
-  padding-bottom: max(1em, env(safe-area-inset-bottom));
-  padding-left: max(1em, env(safe-area-inset-left));
+  padding: 0 max(1em, env(safe-area-inset-right)) max(1em, env(safe-area-inset-bottom))
+    max(1em, env(safe-area-inset-left));
   background: var(--bg);
   color: var(--text);
   transition: background 0.3s, color 0.3s;
+}
+
+#page-wrapper {
+  padding-top: max(1em, env(safe-area-inset-top));
 }
 
 body.settings-open {
@@ -63,13 +64,24 @@ select[multiple] {
   height: 3em;
 }
 
-#tabs {
+#app-sticky-nav {
   position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg);
-  padding: 0.4em 0;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 110;
+  margin-left: calc(-1 * max(1em, env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(1em, env(safe-area-inset-right)));
   margin-bottom: 0.5em;
+  padding: 0.35em max(1em, env(safe-area-inset-right)) 0.35em max(1em, env(safe-area-inset-left));
+  background: var(--bg);
+  border-bottom: 1px solid var(--control-border);
+}
+
+#tabs {
+  position: static;
+  z-index: auto;
+  background: transparent;
+  padding: 0.35em 0 0;
+  margin-bottom: 0;
   display: block;
 }
 
@@ -725,7 +737,7 @@ button.leave {
 }
 
 .card.schedule-item-focused {
-  scroll-margin-top: 6rem;
+  scroll-margin-top: calc(7rem + env(safe-area-inset-top, 0px));
   box-shadow: 0 0 0 3px var(--tab-active-bg);
   animation: schedule-item-focus 2s ease-out;
 }
@@ -807,8 +819,8 @@ button.leave {
 
 #site-footer {
   text-align: center;
-  padding: 1.25em 1em 1.35em;
-  margin-top: 0.75em;
+  padding: 1.25em max(1em, env(safe-area-inset-right)) 1.35em max(1em, env(safe-area-inset-left));
+  margin: 0.75em calc(-1 * max(1em, env(safe-area-inset-right))) 0 calc(-1 * max(1em, env(safe-area-inset-left)));
   font-size: 0.95em;
   line-height: 1.4;
   background: rgba(0, 0, 0, 0.05);
@@ -867,7 +879,7 @@ body:not(.dark) #logo-title img {
   display: flex;
   justify-content: center;
   gap: 0.35em;
-  margin-bottom: 0.65em;
+  margin-bottom: 0.35em;
 }
 
 #view-tabs .view-tab {
