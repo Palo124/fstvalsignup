@@ -69,7 +69,7 @@ export function renderSchedule(input: RenderScheduleInput): void {
     return;
   }
 
-  const filteredItems = applyScheduleFilters(input.items, input.filters, input.overlaps);
+  const filteredItems = applyScheduleFilters(input.items, input.filters, input.overlaps, input.currentUser);
   const rows = toViewRows(filteredItems, input);
 
   if (rows.length === 0) {

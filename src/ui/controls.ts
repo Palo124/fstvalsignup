@@ -17,6 +17,9 @@ export interface ControlsElements {
   stages: HTMLSelectElement;
   theme: HTMLInputElement;
   overlapsOnly: HTMLInputElement;
+  joinedOnly: HTMLInputElement;
+  popularOnly: HTMLInputElement;
+  myScheduleJoinedOnly: HTMLInputElement;
   pinNow: HTMLInputElement;
   dimPast: HTMLInputElement;
   notifications: HTMLInputElement;
@@ -27,7 +30,8 @@ export interface ControlsElements {
   notifyNowPlaying: HTMLInputElement;
   notifyDailyOpener: HTMLInputElement;
   menuToggle: HTMLButtonElement;
-  controlsPanel: HTMLElement;
+  settingsClose: HTMLButtonElement;
+  controlsPanel: HTMLDialogElement;
 }
 
 export interface ControlState {
@@ -44,6 +48,9 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   elements.nickname.value = nickname;
   elements.theme.checked = themePreference === 'dark';
   elements.overlapsOnly.checked = loadJson(storageKeys.filterOverlaps, false);
+  elements.joinedOnly.checked = loadJson(storageKeys.filterJoined, false);
+  elements.popularOnly.checked = loadJson(storageKeys.filterPopular, false);
+  elements.myScheduleJoinedOnly.checked = loadJson(storageKeys.myScheduleJoinedOnly, true);
   elements.pinNow.checked = loadJson(storageKeys.pinNowPlaying, false);
   elements.dimPast.checked = loadJson(storageKeys.dimPastShows, true);
   elements.notifications.checked = loadJson(storageKeys.notificationsEnabled, false);
@@ -67,6 +74,21 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
 
   elements.overlapsOnly.addEventListener('change', () => {
     saveJson(storageKeys.filterOverlaps, elements.overlapsOnly.checked);
+    onChange();
+  });
+
+  elements.joinedOnly.addEventListener('change', () => {
+    saveJson(storageKeys.filterJoined, elements.joinedOnly.checked);
+    onChange();
+  });
+
+  elements.popularOnly.addEventListener('change', () => {
+    saveJson(storageKeys.filterPopular, elements.popularOnly.checked);
+    onChange();
+  });
+
+  elements.myScheduleJoinedOnly.addEventListener('change', () => {
+    saveJson(storageKeys.myScheduleJoinedOnly, elements.myScheduleJoinedOnly.checked);
     onChange();
   });
 
@@ -97,8 +119,20 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   }
 
   elements.menuToggle.addEventListener('click', () => {
-    const collapsed = elements.controlsPanel.classList.toggle('collapsed');
-    elements.menuToggle.setAttribute('aria-expanded', String(!collapsed));
+    if (elements.controlsPanel.open) {
+      elements.controlsPanel.close();
+    } else {
+      openSettingsDialog(elements);
+    }
+  });
+
+  elements.settingsClose.addEventListener('click', () => {
+    elements.controlsPanel.close();
+  });
+
+  elements.controlsPanel.addEventListener('close', () => {
+    unlockBodyScroll();
+    syncSettingsDialogAria(elements);
   });
 
   return {
@@ -119,13 +153,30 @@ export function readFilters(elements: ControlsElements): ScheduleFilters {
     attendees: selectedValues(elements.attendees),
     stages: selectedValues(elements.stages),
     overlapsOnly: elements.overlapsOnly.checked,
+    joinedOnly: elements.joinedOnly.checked,
+    popularOnly: elements.popularOnly.checked,
   };
 
   saveJson(storageKeys.filterAttendees, filters.attendees);
   saveJson(storageKeys.filterStages, filters.stages);
   saveJson(storageKeys.filterOverlaps, filters.overlapsOnly);
+  saveJson(storageKeys.filterJoined, filters.joinedOnly);
+  saveJson(storageKeys.filterPopular, filters.popularOnly);
 
   return filters;
+}
+
+export function readMyScheduleFilters(elements: ControlsElements): ScheduleFilters {
+  return {
+    ...readFilters(elements),
+    joinedOnly: readMyScheduleJoinedOnly(elements),
+    popularOnly: false,
+  };
+}
+
+export function readMyScheduleJoinedOnly(elements: ControlsElements): boolean {
+  saveJson(storageKeys.myScheduleJoinedOnly, elements.myScheduleJoinedOnly.checked);
+  return elements.myScheduleJoinedOnly.checked;
 }
 
 export function readNickname(elements: ControlsElements): string {
@@ -155,6 +206,26 @@ function fillSelect(select: HTMLSelectElement, values: string[], storageKey: str
 
 function selectedValues(select: HTMLSelectElement): string[] {
   return Array.from(select.selectedOptions).map((option) => option.value);
+}
+
+function syncSettingsDialogAria(elements: ControlsElements): void {
+  elements.menuToggle.setAttribute('aria-expanded', String(elements.controlsPanel.open));
+}
+
+let savedScrollY = 0;
+
+function openSettingsDialog(elements: ControlsElements): void {
+  savedScrollY = window.scrollY;
+  document.body.classList.add('settings-open');
+  document.body.style.top = `-${savedScrollY}px`;
+  elements.controlsPanel.showModal();
+  syncSettingsDialogAria(elements);
+}
+
+function unlockBodyScroll(): void {
+  document.body.classList.remove('settings-open');
+  document.body.style.removeProperty('top');
+  window.scrollTo(0, savedScrollY);
 }
 
 function applyNotificationPreferencesToUi(elements: ControlsElements): void {

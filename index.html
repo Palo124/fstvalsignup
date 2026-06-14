@@ -26,89 +26,12 @@
 
     <div id="page-wrapper">
       <header id="logo-title">
-        <button id="menu-toggle" type="button" aria-expanded="false" aria-controls="controls">☰</button>
+        <button id="menu-toggle" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="controls">☰</button>
         <img src="https://www.b4l.cz/wp-content/uploads/2024/09/logo_bfl_2024_25.svg" alt="B4L Lineup Planner">
         <h2>LINEUP PLANNER</h2>
       </header>
 
-      <section id="controls" class="collapsed" aria-label="Schedule controls">
-        <input id="nickname" placeholder="Your nickname" autocomplete="nickname">
-        <select id="filterSelect" multiple aria-label="Filter by attendees"></select>
-        <select id="stageSelect" multiple aria-label="Filter by stages"></select>
-
-        <div class="theme-toggle">
-          <span class="switch-label">Dark Mode</span>
-          <label class="switch">
-            <input type="checkbox" id="themeToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="theme-toggle">
-          <span class="switch-label">Pin now-playing</span>
-          <label class="switch">
-            <input type="checkbox" id="pinToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="theme-toggle">
-          <span class="switch-label">Dim past shows</span>
-          <label class="switch">
-            <input type="checkbox" id="pastToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="theme-toggle">
-          <span class="switch-label">Show overlaps only</span>
-          <label class="switch">
-            <input type="checkbox" id="collisionToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
-
-        <div class="theme-toggle" id="notifications-row">
-          <span class="switch-label">Show notifications</span>
-          <label class="switch">
-            <input type="checkbox" id="notificationsToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
-        <p id="notifications-hint" class="control-hint" hidden>
-          Add the app to your iPhone home screen, then enable notifications here in Safari.
-        </p>
-
-        <div id="notification-settings" class="notification-settings" hidden>
-          <p class="notification-settings-title">Notify me about</p>
-          <p id="notification-settings-hint" class="control-hint">Turn on notifications above to receive these.</p>
-
-          <div class="theme-toggle notification-pref">
-            <span class="switch-label">Starting soon <span class="switch-detail">15 min before</span></span>
-            <label class="switch">
-              <input type="checkbox" id="notifyStartsSoon">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="theme-toggle notification-pref">
-            <span class="switch-label">On stage now</span>
-            <label class="switch">
-              <input type="checkbox" id="notifyNowPlaying">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="theme-toggle notification-pref">
-            <span class="switch-label">Daily lineup <span class="switch-detail">10:00 summary</span></span>
-            <label class="switch">
-              <input type="checkbox" id="notifyDailyOpener">
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-      </section>
-
+      <nav id="view-tabs" aria-label="Schedule views"></nav>
       <nav id="tabs" aria-label="Festival days"></nav>
       <main id="schedule"></main>
 
@@ -119,6 +42,156 @@
         </p>
       </footer>
     </div>
+
+    <dialog id="controls" class="settings-dialog" aria-labelledby="settings-title">
+      <div class="settings-dialog-header">
+        <h3 id="settings-title" class="controls-heading">Settings</h3>
+        <button id="settings-close" type="button" class="settings-close" aria-label="Close settings">×</button>
+      </div>
+      <div class="controls-panel">
+        <div class="control-section">
+          <h4 class="control-section-title">Profile</h4>
+          <label class="control-field" for="nickname">
+            <span class="control-field-label">Your nickname</span>
+            <input id="nickname" placeholder="Enter nickname" autocomplete="nickname">
+          </label>
+        </div>
+
+        <div class="control-section">
+          <h4 class="control-section-title">Lineup filters</h4>
+          <p class="control-section-hint">Narrow the performance list.</p>
+          <label class="control-field" for="filterSelect">
+            <span class="control-field-label">Attendees</span>
+            <select id="filterSelect" multiple aria-label="Filter by attendees"></select>
+          </label>
+          <label class="control-field" for="stageSelect">
+            <span class="control-field-label">Stages</span>
+            <select id="stageSelect" multiple aria-label="Filter by stages"></select>
+          </label>
+          <div class="control-toggle-list">
+            <div class="theme-toggle">
+              <span class="switch-label">Show overlaps only</span>
+              <label class="switch">
+                <input type="checkbox" id="collisionToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="theme-toggle">
+              <span class="switch-label">Show joined only</span>
+              <label class="switch">
+                <input type="checkbox" id="joinedToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="theme-toggle">
+              <span class="switch-label">
+                Most joined only
+                <span class="switch-detail">Top join count on this day</span>
+              </span>
+              <label class="switch">
+                <input type="checkbox" id="popularToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <h4 class="control-section-title">My schedule</h4>
+          <p class="control-section-hint">Options for the timeline view.</p>
+          <div class="control-toggle-list">
+            <div class="theme-toggle">
+              <span class="switch-label">Show joined only</span>
+              <label class="switch">
+                <input type="checkbox" id="myScheduleJoinedToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <h4 class="control-section-title">Lineup display</h4>
+          <p class="control-section-hint">How performances appear in the list.</p>
+          <div class="control-toggle-list">
+            <div class="theme-toggle">
+              <span class="switch-label">Pin now-playing</span>
+              <label class="switch">
+                <input type="checkbox" id="pinToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="theme-toggle">
+              <span class="switch-label">Dim past shows</span>
+              <label class="switch">
+                <input type="checkbox" id="pastToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <h4 class="control-section-title">Appearance</h4>
+          <div class="control-toggle-list">
+            <div class="theme-toggle">
+              <span class="switch-label">Dark mode</span>
+              <label class="switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <h4 class="control-section-title">Notifications</h4>
+          <div class="control-toggle-list">
+            <div class="theme-toggle" id="notifications-row">
+              <span class="switch-label">Enable notifications</span>
+              <label class="switch">
+                <input type="checkbox" id="notificationsToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+          <p id="notifications-hint" class="control-hint" hidden>
+            Add the app to your iPhone home screen, then enable notifications here in Safari.
+          </p>
+
+          <div id="notification-settings" class="notification-settings" hidden>
+            <p class="notification-settings-title">Notify me about</p>
+            <p id="notification-settings-hint" class="control-hint">Turn on notifications above to receive these.</p>
+
+            <div class="control-toggle-list">
+              <div class="theme-toggle notification-pref">
+                <span class="switch-label">Starting soon <span class="switch-detail">15 min before</span></span>
+                <label class="switch">
+                  <input type="checkbox" id="notifyStartsSoon">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="theme-toggle notification-pref">
+                <span class="switch-label">On stage now</span>
+                <label class="switch">
+                  <input type="checkbox" id="notifyNowPlaying">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="theme-toggle notification-pref">
+                <span class="switch-label">Daily lineup <span class="switch-detail">10:00 summary</span></span>
+                <label class="switch">
+                  <input type="checkbox" id="notifyDailyOpener">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </dialog>
 
     <script type="module" src="./src/main.ts"></script>
   </body>

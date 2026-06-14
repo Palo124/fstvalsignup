@@ -36,4 +36,6 @@ export interface ScheduleFilters {
   attendees: string[];
   stages: string[];
   overlapsOnly: boolean;
+  joinedOnly: boolean;
+  popularOnly: boolean;
 }

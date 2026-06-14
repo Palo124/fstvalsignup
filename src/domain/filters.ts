@@ -5,8 +5,11 @@ export function applyScheduleFilters(
   items: ScheduleItem[],
   filters: ScheduleFilters,
   overlaps: OverlapMap,
+  currentUser = '',
 ): ScheduleItem[] {
-  return items.filter((item) => {
+  const normalizedUser = currentUser.trim();
+
+  const filtered = items.filter((item) => {
     if (filters.attendees.length > 0 && !filters.attendees.some((name) => item.attendees.includes(name))) {
       return false;
     }
@@ -19,6 +22,26 @@ export function applyScheduleFilters(
       return false;
     }
 
+    if (filters.joinedOnly && (!normalizedUser || !item.attendees.includes(normalizedUser))) {
+      return false;
+    }
+
     return true;
   });
+
+  if (!filters.popularOnly) {
+    return filtered;
+  }
+
+  const maxAttendees = filtered.reduce((max, item) => Math.max(max, item.attendees.length), 0);
+
+  if (maxAttendees === 0) {
+    return [];
+  }
+
+  return filtered.filter((item) => item.attendees.length === maxAttendees);
+}
+
+export function maxAttendeeCount(items: ScheduleItem[]): number {
+  return items.reduce((max, item) => Math.max(max, item.attendees.length), 0);
 }

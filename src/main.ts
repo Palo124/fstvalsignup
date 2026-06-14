@@ -10,13 +10,16 @@ import {
   populateFilterOptions,
   readDimPastShows,
   readFilters,
+  readMyScheduleFilters,
   readNickname,
   readPinNowPlaying,
   type ControlsElements,
 } from './ui/controls';
 import { getRequiredElement } from './ui/dom';
+import { renderMySchedule } from './ui/myScheduleView';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
+import { renderViewTabs as renderAppViewTabs, type AppView } from './ui/viewTabs';
 import { applyTheme, bindSystemTheme } from './ui/theme';
 import { pollPendingNotifications, registerServiceWorker, syncPushSubscription } from './push/notifications';
 import { loadJson, storageKeys } from './state/storage';
@@ -24,8 +27,9 @@ import type { ScheduleItem } from './types/schedule';
 
 const api = createLineupApi(config.backendUrl);
 const elements = getElements();
-const initialControls = initControls(elements, renderCurrentSchedule, applyTheme);
+const initialControls = initControls(elements, renderCurrentView, applyTheme);
 const state = createAppState(initialControls.nickname);
+let currentView: AppView = 'lineup';
 
 applyTheme(initialControls.themePreference);
 bindSystemTheme(() => {
@@ -50,7 +54,7 @@ void bootstrap();
 
 setInterval(() => {
   if (!document.hidden && state.schedule.length > 0) {
-    renderCurrentSchedule();
+    renderCurrentView();
   }
 }, 30_000);
 
@@ -67,6 +71,7 @@ async function bootstrap(): Promise<void> {
       return;
     }
 
+    renderViewTabs();
     renderDayTabs();
     await loadSchedule(state.currentDay);
     prefetchSchedules(days, state.currentDay);
@@ -85,7 +90,7 @@ async function loadSchedule(day: string): Promise<void> {
   const cached = state.scheduleByDay.get(day);
   if (cached) {
     state.schedule = cached;
-    renderCurrentSchedule();
+    renderCurrentView();
   } else {
     showLoading(elements.schedule);
   }
@@ -109,7 +114,7 @@ function applyScheduleRows(day: string, rows: Parameters<typeof normalizeSchedul
   state.schedule = schedule;
   state.scheduleByDay.set(day, schedule);
   populateFilterOptions(elements, allAttendees(schedule), allStages(schedule));
-  renderCurrentSchedule();
+  renderCurrentView();
   void syncPushSubscription(readNickname(elements));
 }
 
@@ -133,8 +138,23 @@ function prefetchSchedules(days: string[], activeDay: string): void {
   }
 }
 
-function renderCurrentSchedule(): void {
+function renderCurrentView(): void {
   state.nickname = readNickname(elements);
+
+  if (currentView === 'my-schedule') {
+    renderMySchedule({
+      container: elements.schedule,
+      items: state.schedule,
+      filters: readMyScheduleFilters(elements),
+      overlaps: computeOverlaps(state.schedule, state.nickname, config.preDawnCutoffMinutes),
+      currentUser: state.nickname,
+      dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
+      timeZoneOffset: config.festivalTimeZoneOffset,
+      preDawnCutoffMinutes: config.preDawnCutoffMinutes,
+      nowMs: Date.now(),
+    });
+    return;
+  }
 
   renderSchedule({
     container: elements.schedule,
@@ -150,6 +170,12 @@ function renderCurrentSchedule(): void {
     nowMs: Date.now(),
     onToggle: toggleAttendance,
   });
+}
+
+function selectView(view: AppView): void {
+  currentView = view;
+  renderViewTabs();
+  renderCurrentView();
 }
 
 async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<void> {
@@ -172,7 +198,7 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
     show.id === item.id ? { ...show, attendees: optimisticAttendees } : show,
   );
   state.scheduleByDay.set(state.currentDay, state.schedule);
-  renderCurrentSchedule();
+  renderCurrentView();
 
   if (button) {
     button.disabled = true;
@@ -193,13 +219,17 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
   } catch (error) {
     state.schedule = previousSchedule;
     state.scheduleByDay.set(state.currentDay, previousSchedule);
-    renderCurrentSchedule();
+    renderCurrentView();
     alert(error instanceof Error ? error.message : 'Could not update attendance.');
     if (button) {
       button.disabled = false;
       button.textContent = originalText;
     }
   }
+}
+
+function renderViewTabs(): void {
+  renderAppViewTabs(elements.viewTabs, currentView, selectView);
 }
 
 function renderDayTabs(): void {
@@ -214,15 +244,16 @@ function renderDayTabs(): void {
   );
 }
 
-function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLElement } {
-  const controlsPanel = getRequiredElement('controls', HTMLElement);
-
+function getElements(): ControlsElements & { viewTabs: HTMLElement; tabs: HTMLElement; schedule: HTMLElement } {
   return {
     nickname: getRequiredElement('nickname', HTMLInputElement),
     attendees: getRequiredElement('filterSelect', HTMLSelectElement),
     stages: getRequiredElement('stageSelect', HTMLSelectElement),
     theme: getRequiredElement('themeToggle', HTMLInputElement),
     overlapsOnly: getRequiredElement('collisionToggle', HTMLInputElement),
+    joinedOnly: getRequiredElement('joinedToggle', HTMLInputElement),
+    popularOnly: getRequiredElement('popularToggle', HTMLInputElement),
+    myScheduleJoinedOnly: getRequiredElement('myScheduleJoinedToggle', HTMLInputElement),
     pinNow: getRequiredElement('pinToggle', HTMLInputElement),
     dimPast: getRequiredElement('pastToggle', HTMLInputElement),
     notifications: getRequiredElement('notificationsToggle', HTMLInputElement),
@@ -233,7 +264,9 @@ function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLEl
     notifyNowPlaying: getRequiredElement('notifyNowPlaying', HTMLInputElement),
     notifyDailyOpener: getRequiredElement('notifyDailyOpener', HTMLInputElement),
     menuToggle: getRequiredElement('menu-toggle', HTMLButtonElement),
-    controlsPanel,
+    settingsClose: getRequiredElement('settings-close', HTMLButtonElement),
+    controlsPanel: getRequiredElement('controls', HTMLDialogElement),
+    viewTabs: getRequiredElement('view-tabs', HTMLElement),
     tabs: getRequiredElement('tabs', HTMLElement),
     schedule: getRequiredElement('schedule', HTMLElement),
   };
