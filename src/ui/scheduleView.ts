@@ -20,6 +20,7 @@ interface RenderScheduleInput {
   dimPastShows: boolean;
   nowMs: number;
   onToggle: (item: ScheduleItem, event: MouseEvent) => void;
+  pendingToggleIds: ReadonlySet<number>;
   focusItemId?: number | null;
 }
 
@@ -282,10 +283,20 @@ function renderAttendees(attendees: string[]): HTMLElement {
 
 function renderToggleButton(item: ScheduleItem, input: RenderScheduleInput): HTMLButtonElement {
   const isAttending = input.currentUser.length > 0 && item.attendees.includes(input.currentUser);
+  const isPending = input.pendingToggleIds.has(item.id);
+  const label = isAttending ? 'Leave' : 'Join';
   const button = document.createElement('button');
   button.type = 'button';
   button.className = isAttending ? 'leave' : 'join';
-  button.textContent = isAttending ? 'Leave' : 'Join';
+
+  if (isPending) {
+    button.classList.add('is-pending');
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.setAttribute('aria-label', `${label} — saving`);
+  }
+
+  button.textContent = label;
   button.addEventListener('click', (event) => input.onToggle(item, event));
   return button;
 }

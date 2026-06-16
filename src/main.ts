@@ -35,6 +35,7 @@ const initialControls = initControls(elements, renderCurrentView, applyTheme);
 const state = createAppState(initialControls.nickname);
 let currentView: AppView = 'lineup';
 let focusLineupItemId: number | null = null;
+const pendingToggleIds = new Set<number>();
 
 applyTheme(initialControls.themePreference);
 bindSystemTheme(() => {
@@ -178,6 +179,7 @@ function renderCurrentView(): void {
     dimPastShows: readDimPastShows(elements),
     nowMs: Date.now(),
     onToggle: toggleAttendance,
+    pendingToggleIds,
     focusItemId,
   });
 }
@@ -203,7 +205,7 @@ function selectView(view: AppView): void {
   renderCurrentView();
 }
 
-async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<void> {
+async function toggleAttendance(item: ScheduleItem, _event: MouseEvent): Promise<void> {
   state.nickname = readNickname(elements);
 
   if (!state.nickname) {
@@ -211,24 +213,22 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
     return;
   }
 
-  const button = event.currentTarget instanceof HTMLButtonElement ? event.currentTarget : null;
-  const originalText = button?.textContent ?? '';
+  if (pendingToggleIds.has(item.id)) {
+    return;
+  }
+
   const isAttending = item.attendees.includes(state.nickname);
   const optimisticAttendees = isAttending
     ? item.attendees.filter((attendee) => attendee !== state.nickname)
     : [...item.attendees, state.nickname];
   const previousSchedule = state.schedule;
 
+  pendingToggleIds.add(item.id);
   state.schedule = state.schedule.map((show) =>
     show.id === item.id ? { ...show, attendees: optimisticAttendees } : show,
   );
   state.scheduleByDay.set(state.currentDay, state.schedule);
   renderCurrentView();
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = 'Working...';
-  }
 
   try {
     const rows = await api.toggleAttendance({
@@ -237,19 +237,17 @@ async function toggleAttendance(item: ScheduleItem, event: MouseEvent): Promise<
       nickname: state.nickname,
     });
 
+    pendingToggleIds.delete(item.id);
     applyScheduleRows(state.currentDay, rows);
     if (loadJson(storageKeys.notificationsEnabled, false)) {
       void syncPushSubscription(state.nickname);
     }
   } catch (error) {
+    pendingToggleIds.delete(item.id);
     state.schedule = previousSchedule;
     state.scheduleByDay.set(state.currentDay, previousSchedule);
     renderCurrentView();
     alert(error instanceof Error ? error.message : 'Could not update attendance.');
-    if (button) {
-      button.disabled = false;
-      button.textContent = originalText;
-    }
   }
 }
 

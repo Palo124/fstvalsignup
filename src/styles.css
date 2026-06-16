@@ -813,6 +813,18 @@ input:checked + .slider::before {
   cursor: pointer;
   border-radius: 20px;
   font-weight: 600;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+button.join:active:not(:disabled),
+button.leave:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+button.join.is-pending,
+button.leave.is-pending {
+  opacity: 0.72;
+  cursor: wait;
 }
 
 button.join {
