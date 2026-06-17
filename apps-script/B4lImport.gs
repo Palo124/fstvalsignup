@@ -265,32 +265,74 @@ function parseB4lDayLabels_(html) {
   return labels;
 }
 
-function findTimetableDayBlockStarts_(html) {
-  var marker = '<div class="timetable-day-data"';
-  var starts = [];
-  var position = 0;
+function escapeRegExp_(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
-  while (true) {
-    var index = html.indexOf(marker, position);
-    if (index === -1) break;
-    starts.push(index);
-    position = index + marker.length;
+function divClassOpenTagPattern_(className) {
+  return new RegExp('<div\\s+class=[\'"]' + escapeRegExp_(className) + '[^>]*>', 'gi');
+}
+
+function findDivClassStarts_(html, className) {
+  var pattern = divClassOpenTagPattern_(className);
+  var starts = [];
+  var match;
+
+  while ((match = pattern.exec(html)) !== null) {
+    starts.push(match.index);
   }
 
   return starts;
 }
 
-function splitTimetableDayBlocks_(html) {
-  var marker = '<div class="timetable-day-data"';
-  var parts = html.split(marker);
-  parts.shift();
+function lastDivClassStartBefore_(html, className) {
+  var pattern = divClassOpenTagPattern_(className);
+  var last = -1;
+  var match;
+
+  while ((match = pattern.exec(html)) !== null) {
+    last = match.index;
+  }
+
+  return last;
+}
+
+function splitByDivClass_(html, className) {
+  var pattern = divClassOpenTagPattern_(className);
+  var parts = [];
+  var lastIndex = 0;
+  var foundFirst = false;
+  var match;
+
+  while ((match = pattern.exec(html)) !== null) {
+    if (!foundFirst) {
+      foundFirst = true;
+      lastIndex = match.index + match[0].length;
+      continue;
+    }
+
+    parts.push(html.substring(lastIndex, match.index));
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (foundFirst) {
+    parts.push(html.substring(lastIndex));
+  }
+
   return parts;
+}
+
+function findTimetableDayBlockStarts_(html) {
+  return findDivClassStarts_(html, 'timetable-day-data');
+}
+
+function splitTimetableDayBlocks_(html) {
+  return splitByDivClass_(html, 'timetable-day-data');
 }
 
 function stageNamesBeforeBlock_(html, blockStartIndex) {
   var before = html.substring(0, blockStartIndex);
-  var marker = '<div class="stage-titles-wrapper"';
-  var wrapperStart = before.lastIndexOf(marker);
+  var wrapperStart = lastDivClassStartBefore_(before, 'stage-titles-wrapper');
   if (wrapperStart === -1) return [];
 
   return extractButtonTexts_(before.substring(wrapperStart));
@@ -310,15 +352,12 @@ function extractButtonTexts_(html) {
 }
 
 function splitStageColumns_(blockHtml) {
-  var marker = '<div class="stage-timetable">';
-  var parts = blockHtml.split(marker);
-  parts.shift();
-  return parts;
+  return splitByDivClass_(blockHtml, 'stage-timetable');
 }
 
 function parseB4lCards_(columnHtml) {
   var entries = [];
-  var pattern = /<div class="card-body"[\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<br\s*\/?>[\s\S]*?(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2})/gi;
+  var pattern = /<div class=['"]card-body['"][\s\S]*?<strong>([\s\S]*?)<\/strong>[\s\S]*?<br\s*\/?>[\s\S]*?(\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2})/gi;
   var match;
 
   while ((match = pattern.exec(columnHtml)) !== null) {
