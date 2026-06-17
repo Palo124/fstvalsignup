@@ -22,6 +22,7 @@ export interface ControlsElements {
   myScheduleJoinedOnly: HTMLInputElement;
   pinNow: HTMLInputElement;
   dimPast: HTMLInputElement;
+  daySummary: HTMLInputElement;
   notifications: HTMLInputElement;
   notificationsHint: HTMLElement;
   notificationSettings: HTMLElement;
@@ -56,6 +57,7 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   elements.myScheduleJoinedOnly.checked = loadJson(storageKeys.myScheduleJoinedOnly, true);
   elements.pinNow.checked = loadJson(storageKeys.pinNowPlaying, false);
   elements.dimPast.checked = loadJson(storageKeys.dimPastShows, true);
+  elements.daySummary.checked = loadJson(storageKeys.showDaySummary, false);
   elements.notifications.checked = loadJson(storageKeys.notificationsEnabled, false);
   applyNotificationPreferencesToUi(elements);
   configureNotificationsUi(elements);
@@ -102,6 +104,11 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
 
   elements.dimPast.addEventListener('change', () => {
     saveJson(storageKeys.dimPastShows, elements.dimPast.checked);
+    onChange();
+  });
+
+  elements.daySummary.addEventListener('change', () => {
+    saveJson(storageKeys.showDaySummary, elements.daySummary.checked);
     onChange();
   });
 
@@ -202,6 +209,11 @@ export function readPinNowPlaying(elements: ControlsElements): boolean {
 export function readDimPastShows(elements: ControlsElements): boolean {
   saveJson(storageKeys.dimPastShows, elements.dimPast.checked);
   return elements.dimPast.checked;
+}
+
+export function readShowDaySummary(elements: ControlsElements): boolean {
+  saveJson(storageKeys.showDaySummary, elements.daySummary.checked);
+  return elements.daySummary.checked;
 }
 
 function fillSelect(select: HTMLSelectElement, values: string[], storageKey: string): void {

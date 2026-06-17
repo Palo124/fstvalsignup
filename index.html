@@ -35,6 +35,7 @@
       <div id="app-sticky-nav">
         <nav id="tabs" aria-label="Festival days"></nav>
       </div>
+      <p id="day-summary" class="day-summary" hidden aria-live="polite"></p>
       <main id="schedule"></main>
 
       <footer id="site-footer">
@@ -128,6 +129,16 @@
               <span class="switch-label">Dim past shows</span>
               <label class="switch">
                 <input type="checkbox" id="pastToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="theme-toggle">
+              <span class="switch-label">
+                Show day summary
+                <span class="switch-detail">Joined, conflicts, totals</span>
+              </span>
+              <label class="switch">
+                <input type="checkbox" id="daySummaryToggle">
                 <span class="slider"></span>
               </label>
             </div>

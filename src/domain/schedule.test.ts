@@ -42,4 +42,18 @@ describe('sortByScheduleTime', () => {
 
     expect(sortByScheduleTime([late, early], 300).map((item) => item.artist)).toEqual(['Evening', 'Late']);
   });
+
+  it('sorts morning afterparty rows after the main day', () => {
+    const items = normalizeScheduleRows([
+      { rowIndex: 1, Artist: 'Afterparty', Stage: 'FABRIC AFTERPARTY MAIN', Time: '10:00–11:00' },
+      { rowIndex: 2, Artist: 'Opener', Stage: 'LOVE', Time: '14:00–15:00' },
+      { rowIndex: 3, Artist: 'Night', Stage: 'EMPIRE', Time: '02:00–03:00' },
+    ]);
+
+    expect(sortByScheduleTime(items, 11 * 60).map((item) => item.artist)).toEqual([
+      'Opener',
+      'Night',
+      'Afterparty',
+    ]);
+  });
 });

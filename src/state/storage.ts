@@ -11,6 +11,7 @@ export const storageKeys = {
   filterPopular: 'filterPopular',
   myScheduleJoinedOnly: 'myScheduleJoinedOnly',
   pinNowPlaying: 'pinNowPlaying',
+  showDaySummary: 'showDaySummary',
   notificationsEnabled: 'notificationsEnabled',
   notificationPrefs: 'notificationPrefs',
 } as const;

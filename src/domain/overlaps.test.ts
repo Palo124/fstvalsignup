@@ -3,7 +3,7 @@ import { computeOverlaps } from './overlaps';
 import { parseTimeRange } from './time';
 import type { ScheduleItem } from '../types/schedule';
 
-const preDawnCutoffMinutes = 9 * 60;
+const preDawnCutoffMinutes = 11 * 60;
 
 describe('computeOverlaps', () => {
   it('maps each overlapping show to its collision partners', () => {

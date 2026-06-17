@@ -28,6 +28,13 @@ describe('sortStartMinutes', () => {
 
     expect(range && sortStartMinutes(range, 300)).toBe(1560);
   });
+
+  it('treats morning afterparty slots as part of the previous festival block', () => {
+    const range = parseTimeRange('10:00–11:00');
+
+    expect(range && sortStartMinutes(range, 11 * 60)).toBe(2040);
+    expect(range && sortStartMinutes(range, 9 * 60)).toBe(600);
+  });
 });
 
 describe('festivalEndMinutes', () => {

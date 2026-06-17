@@ -31,27 +31,61 @@ function shouldRunNotificationCron_(nowMs) {
 }
 
 var STAGE_COLORS_ = {
-  'LOVE': '#e07599',
+  'ABSOLUT': '#546e7a',
+  'BRICKHOUSE AFTERPARTY MAIN': '#d84315',
+  'BRICKHOUSE AFTERPARTY SECOND': '#ef6c57',
   'D&B FORGE': '#03A9F4',
-  'HARMONY HOUSE SQUARE': '#4db6ac',
-  'TECHNO DOME': '#ba68c8',
   'EMPIRE': '#e57373',
+  'FABRIC AFTERPARTY MAIN': '#6a1b9a',
+  'FABRIC AFTERPARTY SECOND': '#8e24aa',
+  'FREEDOM': '#43a047',
   'FUTURE': '#9570ff',
+  'HARMONY HOUSE SQUARE': '#4db6ac',
+  'HARMONY HOUSE SQUARE by EVROPA 2': '#4db6ac',
+  'IQOS 18+': '#455a64',
+  'KOFOLA NÁMĚSTÍ LÁSKY': '#f06292',
+  'LOVE': '#e07599',
+  'LOVE by ČSOB': '#e07599',
+  'PSY': '#9c27b0',
+  'TALKING BEATS': '#fb8c00',
+  'TECHNO DOME': '#ba68c8',
+  'TECHNO DOME by PROUD': '#ba68c8',
+  'TUNNEL by ZYN': '#3949ab',
+  'ZION by PENNY': '#00897b',
 };
 
-function colorForStage_(stage) {
+function stageColorLookupKeys_(stage) {
   var trimmed = String(stage || '').trim();
-  if (!trimmed) return '#e07599';
+  if (!trimmed) return [];
 
-  if (STAGE_COLORS_[trimmed]) return STAGE_COLORS_[trimmed];
-
-  var upper = trimmed.toUpperCase();
-  var keys = Object.keys(STAGE_COLORS_);
-  for (var i = 0; i < keys.length; i += 1) {
-    if (keys[i].toUpperCase() === upper) return STAGE_COLORS_[keys[i]];
+  var keys = [trimmed];
+  var withoutSuffix = trimmed.split(/\s+by\s+/i)[0];
+  if (withoutSuffix) {
+    withoutSuffix = withoutSuffix.trim();
+    if (withoutSuffix && withoutSuffix !== trimmed) {
+      keys.push(withoutSuffix);
+    }
   }
 
-  return '#e07599';
+  return keys;
+}
+
+function colorForStage_(stage) {
+  var candidates = stageColorLookupKeys_(stage);
+  var fallback = '#e07599';
+
+  for (var candidateIndex = 0; candidateIndex < candidates.length; candidateIndex += 1) {
+    var candidate = candidates[candidateIndex];
+    if (STAGE_COLORS_[candidate]) return STAGE_COLORS_[candidate];
+
+    var upper = candidate.toUpperCase();
+    var keys = Object.keys(STAGE_COLORS_);
+    for (var i = 0; i < keys.length; i += 1) {
+      if (keys[i].toUpperCase() === upper) return STAGE_COLORS_[keys[i]];
+    }
+  }
+
+  return fallback;
 }
 
 function planNotificationsForUser_(nickname, days, scheduleByDay, preferences, nowMs) {
@@ -252,5 +286,5 @@ function getFestivalTimeZoneOffset_() {
 
 function getPreDawnCutoffMinutes_() {
   // Matches src/config.ts preDawnCutoffMinutes
-  return 9 * 60;
+  return 11 * 60;
 }

@@ -270,6 +270,20 @@ select[multiple] {
   border-radius: 4px;
 }
 
+.day-summary {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--control-border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  font-size: 0.85em;
+  line-height: 1.35;
+}
+
+.day-summary[data-conflicts]:not([data-conflicts='0']) {
+  border-color: #e74c3c;
+}
+
 #schedule {
   flex: 1 1 auto;
   min-width: 0;

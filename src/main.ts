@@ -13,9 +13,11 @@ import {
   readMyScheduleFilters,
   readNickname,
   readPinNowPlaying,
+  readShowDaySummary,
   type ControlsElements,
 } from './ui/controls';
 import { getRequiredElement } from './ui/dom';
+import { hideDaySummary, renderDaySummary } from './ui/daySummaryView';
 import { exitMyScheduleFullscreenIfActive, renderMySchedule } from './ui/myScheduleView';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
@@ -145,13 +147,29 @@ function prefetchSchedules(days: string[], activeDay: string): void {
 
 function renderCurrentView(): void {
   state.nickname = readNickname(elements);
+  const showDaySummary = readShowDaySummary(elements);
+  const overlaps = computeOverlaps(state.schedule, state.nickname, config.preDawnCutoffMinutes);
+
+  if (!showDaySummary || state.schedule.length === 0) {
+    hideDaySummary(elements.daySummaryBar);
+  }
 
   if (currentView === 'my-schedule') {
+    if (showDaySummary) {
+      renderDaySummary({
+        container: elements.daySummaryBar,
+        items: state.schedule,
+        filters: readMyScheduleFilters(elements),
+        overlaps,
+        currentUser: state.nickname,
+      });
+    }
+
     renderMySchedule({
       container: elements.schedule,
       items: state.schedule,
       filters: readMyScheduleFilters(elements),
-      overlaps: computeOverlaps(state.schedule, state.nickname, config.preDawnCutoffMinutes),
+      overlaps,
       currentUser: state.nickname,
       dayKey: state.currentDay,
       dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
@@ -166,11 +184,21 @@ function renderCurrentView(): void {
   const focusItemId = focusLineupItemId;
   focusLineupItemId = null;
 
+  if (showDaySummary) {
+    renderDaySummary({
+      container: elements.daySummaryBar,
+      items: state.schedule,
+      filters: readFilters(elements),
+      overlaps,
+      currentUser: state.nickname,
+    });
+  }
+
   renderSchedule({
     container: elements.schedule,
     items: state.schedule,
     filters: readFilters(elements),
-    overlaps: computeOverlaps(state.schedule, state.nickname, config.preDawnCutoffMinutes),
+    overlaps,
     currentUser: state.nickname,
     dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
     timeZoneOffset: config.festivalTimeZoneOffset,
@@ -267,7 +295,7 @@ function renderDayTabs(): void {
   );
 }
 
-function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLElement } {
+function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLElement; daySummaryBar: HTMLElement } {
   return {
     nickname: getRequiredElement('nickname', HTMLInputElement),
     attendees: getRequiredElement('filterSelect', HTMLSelectElement),
@@ -279,6 +307,7 @@ function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLEl
     myScheduleJoinedOnly: getRequiredElement('myScheduleJoinedToggle', HTMLInputElement),
     pinNow: getRequiredElement('pinToggle', HTMLInputElement),
     dimPast: getRequiredElement('pastToggle', HTMLInputElement),
+    daySummary: getRequiredElement('daySummaryToggle', HTMLInputElement),
     notifications: getRequiredElement('notificationsToggle', HTMLInputElement),
     notificationsHint: getRequiredElement('notifications-hint', HTMLElement),
     notificationSettings: getRequiredElement('notification-settings', HTMLElement),
@@ -294,5 +323,6 @@ function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLEl
     controlsPanel: getRequiredElement('controls', HTMLDialogElement),
     tabs: getRequiredElement('tabs', HTMLElement),
     schedule: getRequiredElement('schedule', HTMLElement),
+    daySummaryBar: getRequiredElement('day-summary', HTMLElement),
   };
 }

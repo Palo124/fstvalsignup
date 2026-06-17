@@ -14,7 +14,7 @@
  */
 var B4L_TIMETABLE_URL_ = 'https://www.b4l.cz/timetable/';
 var B4L_SCHEDULE_HEADERS_ = ['Time', 'Stage', 'Artist', 'Attendees'];
-var B4L_PRE_DAWN_CUTOFF_MINUTES_ = 9 * 60;
+var B4L_PRE_DAWN_CUTOFF_MINUTES_ = 11 * 60;
 var B4L_CZECH_TO_ENGLISH_WEEKDAY_ = {
   'Pondělí': 'Monday',
   'Úterý': 'Tuesday',
@@ -110,9 +110,13 @@ function importB4lTimetable_(options) {
 
     if (!dryRun && newRows.length) {
       var startRow = sheet.getLastRow() + 1;
-      sheet.getRange(startRow, 1, startRow + newRows.length - 1, B4L_SCHEDULE_HEADERS_.length)
+      sheet.getRange(startRow, 1, newRows.length, B4L_SCHEDULE_HEADERS_.length)
         .setValues(newRows);
       invalidateSheetCaches_(sheetName);
+    }
+
+    if (!dryRun) {
+      applyStageColorsToSheet_(sheet);
     }
 
     daySummary.appended = newRows.length;
@@ -613,4 +617,56 @@ function decodeHtmlEntities_(value) {
 
 function normalizeInlineText_(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function applyStageColorsToSheet_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  var columnCount = B4L_SCHEDULE_HEADERS_.length;
+  var rowCount = lastRow - 1;
+  var stageValues = sheet.getRange(2, 2, rowCount, 1).getValues();
+  var backgrounds = stageValues.map(function(row) {
+    var tint = stageSheetTint_(colorForStage_(row[0]));
+    var fill = new Array(columnCount);
+    for (var columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
+      fill[columnIndex] = tint;
+    }
+    return fill;
+  });
+
+  sheet.getRange(2, 1, rowCount, columnCount).setBackgrounds(backgrounds);
+}
+
+function stageSheetTint_(hex) {
+  var rgb = parseHexColor_(hex);
+  if (!rgb) return '#ffffff';
+
+  var mix = 0.18;
+  var r = Math.round(rgb.r * mix + 255 * (1 - mix));
+  var g = Math.round(rgb.g * mix + 255 * (1 - mix));
+  var b = Math.round(rgb.b * mix + 255 * (1 - mix));
+  return rgbToHex_(r, g, b);
+}
+
+function parseHexColor_(hex) {
+  var match = /^#?([0-9a-fA-F]{6})$/.exec(String(hex || '').trim());
+  if (!match) return null;
+
+  var value = match[1];
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex_(r, g, b) {
+  function channel(value) {
+    var clamped = Math.max(0, Math.min(255, value));
+    var hex = clamped.toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }
+
+  return '#' + channel(r) + channel(g) + channel(b);
 }
