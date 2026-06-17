@@ -12,6 +12,31 @@ export interface RenderTabsOptions {
 const PANEL_YEAR = 'panelYear';
 const LAST_ACTIVE = 'lastRenderedActiveDay';
 
+const dayTabScrollLeftByPanel = new Map<string, number>();
+
+function dayScrollPanelKey(container: HTMLElement): string {
+  return container.dataset[PANEL_YEAR] ?? '__single__';
+}
+
+function dayScrollContainer(container: HTMLElement): HTMLElement | null {
+  return container.querySelector<HTMLElement>('.tab-day-panel') ?? container.querySelector<HTMLElement>('.tab-row');
+}
+
+function saveDayTabScroll(container: HTMLElement): void {
+  const scrollEl = dayScrollContainer(container);
+  if (scrollEl) {
+    dayTabScrollLeftByPanel.set(dayScrollPanelKey(container), scrollEl.scrollLeft);
+  }
+}
+
+function restoreDayTabScroll(container: HTMLElement): void {
+  const scrollEl = dayScrollContainer(container);
+  const saved = dayTabScrollLeftByPanel.get(dayScrollPanelKey(container));
+  if (scrollEl && saved !== undefined) {
+    scrollEl.scrollLeft = saved;
+  }
+}
+
 function yearForDay(day: string, datesByDay?: Record<string, string>): string | undefined {
   const iso = datesByDay?.[day];
   if (iso) {
@@ -107,6 +132,7 @@ export function renderTabs(
   onSelect: (day: string) => void,
   options?: RenderTabsOptions,
 ): void {
+  saveDayTabScroll(container);
   clear(container);
 
   const datesByDay = options?.datesByDay;
@@ -128,6 +154,7 @@ export function renderTabs(
     toolbar.appendChild(row);
     appendViewTabsIfNeeded(toolbar, options);
     container.appendChild(toolbar);
+    restoreDayTabScroll(container);
     return;
   }
 
@@ -174,4 +201,5 @@ export function renderTabs(
   appendViewTabsIfNeeded(toolbar, options);
   container.appendChild(toolbar);
   container.appendChild(dayPanel);
+  restoreDayTabScroll(container);
 }

@@ -11,7 +11,8 @@
     "gas:build": "node scripts/build-gas-webpush.mjs",
     "gas:push": "npm run gas:build && clasp push",
     "gas:deploy": "node scripts/deploy-gas.mjs",
-    "gas:setup": "echo \"Run setupTriggers in the Apps Script editor (npx clasp open), or enable notifications in the app — the trigger installs automatically.\""
+    "gas:setup": "echo \"Run setupTriggers in the Apps Script editor (npx clasp open), or enable notifications in the app — the trigger installs automatically.\"",
+    "import:b4l:parse": "scripts/import_b4l_schedule/.venv/bin/python scripts/import_b4l_schedule/main.py"
   },
   "devDependencies": {
     "@google/clasp": "^2.5.0",

@@ -4,3 +4,4 @@ dist/
 lineup_scrape/
 *timetable*
 .clasp.json
+scripts/import_b4l_schedule/.venv/

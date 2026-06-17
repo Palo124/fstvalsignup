@@ -14,6 +14,9 @@
  *
  * Time-driven trigger: processScheduledNotifications (every 2.5 minutes via 1-minute carrier)
  *
+ * Timetable import (Apps Script editor or spreadsheet menu):
+ *   importB4lTimetableDryRun() / importB4lTimetable()
+ *
  * Script properties:
  *   VAPID_PUBLIC_KEY
  *   VAPID_PRIVATE_KEY
