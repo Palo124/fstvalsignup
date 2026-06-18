@@ -23,6 +23,7 @@ const emptyFilters = {
   stages: [],
   overlapsOnly: false,
   joinedOnly: false,
+  hasJoinersOnly: false,
   popularOnly: false,
 };
 
@@ -39,6 +40,14 @@ describe('applyScheduleFilters', () => {
     expect(
       applyScheduleFilters([item(1, []), item(2, [])], { ...emptyFilters, popularOnly: true }, new Map(), ''),
     ).toEqual([]);
+  });
+
+  it('keeps only performances with at least one joiner', () => {
+    const items = [item(1, []), item(2, ['a']), item(3, ['b', 'c'])];
+
+    expect(
+      applyScheduleFilters(items, { ...emptyFilters, hasJoinersOnly: true }, new Map(), ''),
+    ).toEqual([item(2, ['a']), item(3, ['b', 'c'])]);
   });
 
   it('applies popular filter after other lineup filters', () => {

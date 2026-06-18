@@ -303,6 +303,7 @@ function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLEl
     theme: getRequiredElement('themeToggle', HTMLInputElement),
     overlapsOnly: getRequiredElement('collisionToggle', HTMLInputElement),
     joinedOnly: getRequiredElement('joinedToggle', HTMLInputElement),
+    hasJoinersOnly: getRequiredElement('hasJoinersToggle', HTMLInputElement),
     popularOnly: getRequiredElement('popularToggle', HTMLInputElement),
     myScheduleJoinedOnly: getRequiredElement('myScheduleJoinedToggle', HTMLInputElement),
     pinNow: getRequiredElement('pinToggle', HTMLInputElement),

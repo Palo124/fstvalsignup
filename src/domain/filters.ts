@@ -26,6 +26,10 @@ export function applyScheduleFilters(
       return false;
     }
 
+    if (filters.hasJoinersOnly && item.attendees.length === 0) {
+      return false;
+    }
+
     return true;
   });
 

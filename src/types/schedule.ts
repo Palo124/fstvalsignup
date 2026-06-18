@@ -37,5 +37,6 @@ export interface ScheduleFilters {
   stages: string[];
   overlapsOnly: boolean;
   joinedOnly: boolean;
+  hasJoinersOnly: boolean;
   popularOnly: boolean;
 }

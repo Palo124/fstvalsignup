@@ -8,6 +8,7 @@ export const storageKeys = {
   dimPastShows: 'dimPastShows',
   filterOverlaps: 'filterOverlaps',
   filterJoined: 'filterJoined',
+  filterHasJoiners: 'filterHasJoiners',
   filterPopular: 'filterPopular',
   myScheduleJoinedOnly: 'myScheduleJoinedOnly',
   pinNowPlaying: 'pinNowPlaying',

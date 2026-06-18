@@ -18,6 +18,7 @@ export interface ControlsElements {
   theme: HTMLInputElement;
   overlapsOnly: HTMLInputElement;
   joinedOnly: HTMLInputElement;
+  hasJoinersOnly: HTMLInputElement;
   popularOnly: HTMLInputElement;
   myScheduleJoinedOnly: HTMLInputElement;
   pinNow: HTMLInputElement;
@@ -53,6 +54,7 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
   elements.theme.checked = themePreference === 'dark';
   elements.overlapsOnly.checked = loadJson(storageKeys.filterOverlaps, false);
   elements.joinedOnly.checked = loadJson(storageKeys.filterJoined, false);
+  elements.hasJoinersOnly.checked = loadJson(storageKeys.filterHasJoiners, false);
   elements.popularOnly.checked = loadJson(storageKeys.filterPopular, false);
   elements.myScheduleJoinedOnly.checked = loadJson(storageKeys.myScheduleJoinedOnly, true);
   elements.pinNow.checked = loadJson(storageKeys.pinNowPlaying, false);
@@ -84,6 +86,11 @@ export function initControls(elements: ControlsElements, onChange: () => void, o
 
   elements.joinedOnly.addEventListener('change', () => {
     saveJson(storageKeys.filterJoined, elements.joinedOnly.checked);
+    onChange();
+  });
+
+  elements.hasJoinersOnly.addEventListener('change', () => {
+    saveJson(storageKeys.filterHasJoiners, elements.hasJoinersOnly.checked);
     onChange();
   });
 
@@ -172,6 +179,7 @@ export function readFilters(elements: ControlsElements): ScheduleFilters {
     stages: selectedValues(elements.stages),
     overlapsOnly: elements.overlapsOnly.checked,
     joinedOnly: elements.joinedOnly.checked,
+    hasJoinersOnly: elements.hasJoinersOnly.checked,
     popularOnly: elements.popularOnly.checked,
   };
 
@@ -179,6 +187,7 @@ export function readFilters(elements: ControlsElements): ScheduleFilters {
   saveJson(storageKeys.filterStages, filters.stages);
   saveJson(storageKeys.filterOverlaps, filters.overlapsOnly);
   saveJson(storageKeys.filterJoined, filters.joinedOnly);
+  saveJson(storageKeys.filterHasJoiners, filters.hasJoinersOnly);
   saveJson(storageKeys.filterPopular, filters.popularOnly);
 
   return filters;
