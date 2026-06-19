@@ -17,6 +17,12 @@ import {
   type ControlsElements,
 } from './ui/controls';
 import { initDaySwipe } from './ui/daySwipe';
+import {
+  clearSwipePreview,
+  previewSwipeDay,
+  setDayLoadingFeedback,
+  type DayTransitionElements,
+} from './ui/dayTransitionFeedback';
 import { getRequiredElement } from './ui/dom';
 import { hideDaySummary, renderDaySummary } from './ui/daySummaryView';
 import { initLineupSearch, readLineupSearchQuery, syncLineupSearchToolbar } from './ui/lineupSearch';
@@ -52,11 +58,18 @@ initDaySwipe(elements.schedule, {
   onSelectDay: (day) => {
     void selectDay(day);
   },
+  onSwipePreview: (day) => {
+    previewSwipeDay(getDayTransitionElements(), day);
+    if (day) {
+      prefetchDay(day);
+    }
+  },
   isBlocked: () => elements.controlsPanel.open || elements.infoDialog.open,
 });
 let currentView: AppView = 'lineup';
 let focusLineupItemId: number | null = null;
 const pendingToggleIds = new Set<number>();
+let loadScheduleToken = 0;
 
 applyTheme(initialControls.themePreference);
 bindSystemTheme(() => {
@@ -108,31 +121,63 @@ async function bootstrap(): Promise<void> {
 }
 
 async function selectDay(day: string): Promise<void> {
+  if (day === state.currentDay) {
+    return;
+  }
+
+  clearSwipePreview(getDayTransitionElements());
   state.currentDay = day;
+
+  if (!state.scheduleByDay.has(day)) {
+    showLoading(elements.schedule);
+  }
+
   renderDayTabs();
   await loadSchedule(day);
 }
 
 async function loadSchedule(day: string): Promise<void> {
+  const token = ++loadScheduleToken;
   const cached = state.scheduleByDay.get(day);
-  if (cached) {
+  const transitionElements = getDayTransitionElements();
+  const awaitingNetwork = !cached;
+
+  setDayLoadingFeedback(transitionElements, true);
+
+  if (cached && state.currentDay === day) {
     state.schedule = cached;
     renderCurrentView();
-  } else {
+  } else if (state.currentDay === day) {
     showLoading(elements.schedule);
   }
 
   try {
     const rows = await api.getSchedule(day);
-    applyScheduleRows(day, rows);
+    if (token !== loadScheduleToken || state.currentDay !== day) {
+      return;
+    }
+
+    applyScheduleRows(day, rows, awaitingNetwork);
   } catch (error) {
-    if (!cached) {
+    if (token !== loadScheduleToken || state.currentDay !== day) {
+      return;
+    }
+
+    if (!state.scheduleByDay.has(day)) {
       showError(elements.schedule, error);
+    }
+  } finally {
+    if (token === loadScheduleToken && state.currentDay === day) {
+      setDayLoadingFeedback(transitionElements, false);
     }
   }
 }
 
-function applyScheduleRows(day: string, rows: Parameters<typeof normalizeScheduleRows>[0]): void {
+function applyScheduleRows(
+  day: string,
+  rows: Parameters<typeof normalizeScheduleRows>[0],
+  animateIn = false,
+): void {
   const schedule = sortByScheduleTime(
     normalizeScheduleRows(rows),
     config.preDawnCutoffMinutes,
@@ -142,7 +187,33 @@ function applyScheduleRows(day: string, rows: Parameters<typeof normalizeSchedul
   state.scheduleByDay.set(day, schedule);
   populateFilterOptions(elements, allAttendees(schedule), allStages(schedule));
   renderCurrentView();
+
+  if (animateIn) {
+    elements.schedule.classList.add('schedule-content-ready');
+    window.setTimeout(() => {
+      elements.schedule.classList.remove('schedule-content-ready');
+    }, 200);
+  }
+
   void syncPushSubscription(readNickname(elements));
+}
+
+function prefetchDay(day: string): void {
+  if (state.scheduleByDay.has(day)) {
+    return;
+  }
+
+  void api.getSchedule(day).then((rows) => {
+    if (state.scheduleByDay.has(day)) {
+      return;
+    }
+
+    const schedule = sortByScheduleTime(
+      normalizeScheduleRows(rows),
+      config.preDawnCutoffMinutes,
+    );
+    state.scheduleByDay.set(day, schedule);
+  });
 }
 
 function prefetchSchedules(days: string[], activeDay: string): void {
@@ -151,18 +222,15 @@ function prefetchSchedules(days: string[], activeDay: string): void {
       continue;
     }
 
-    void api.getSchedule(day).then((rows) => {
-      if (state.scheduleByDay.has(day)) {
-        return;
-      }
-
-      const schedule = sortByScheduleTime(
-        normalizeScheduleRows(rows),
-        config.preDawnCutoffMinutes,
-      );
-      state.scheduleByDay.set(day, schedule);
-    });
+    prefetchDay(day);
   }
+}
+
+function getDayTransitionElements(): DayTransitionElements {
+  return {
+    schedule: elements.schedule,
+    tabs: elements.tabs,
+  };
 }
 
 function renderCurrentView(): void {

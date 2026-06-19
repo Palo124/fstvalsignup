@@ -1,6 +1,7 @@
 import type { AppView } from './viewTabs';
 
 const SWIPE_THRESHOLD_PX = 60;
+const SWIPE_PREVIEW_PX = 20;
 const SWIPE_DIRECTION_RATIO = 1.2;
 
 export interface DaySwipeOptions {
@@ -8,13 +9,43 @@ export interface DaySwipeOptions {
   getDays: () => readonly string[];
   getCurrentDay: () => string;
   onSelectDay: (day: string) => void;
+  onSwipePreview?: (day: string | null) => void;
   isBlocked?: () => boolean;
+}
+
+function resolveSwipeTarget(
+  days: readonly string[],
+  currentDay: string,
+  deltaX: number,
+): string | null {
+  const currentIndex = days.indexOf(currentDay);
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  if (deltaX < 0 && currentIndex < days.length - 1) {
+    return days[currentIndex + 1];
+  }
+
+  if (deltaX > 0 && currentIndex > 0) {
+    return days[currentIndex - 1];
+  }
+
+  return null;
+}
+
+function isHorizontalSwipe(deltaX: number, deltaY: number, threshold: number): boolean {
+  return Math.abs(deltaX) >= threshold && Math.abs(deltaX) >= Math.abs(deltaY) * SWIPE_DIRECTION_RATIO;
 }
 
 export function initDaySwipe(element: HTMLElement, options: DaySwipeOptions): void {
   let startX = 0;
   let startY = 0;
   let tracking = false;
+
+  const clearPreview = (): void => {
+    options.onSwipePreview?.(null);
+  };
 
   element.addEventListener(
     'touchstart',
@@ -37,6 +68,27 @@ export function initDaySwipe(element: HTMLElement, options: DaySwipeOptions): vo
   );
 
   element.addEventListener(
+    'touchmove',
+    (event) => {
+      if (!tracking || options.isBlocked?.() || options.getActiveView() !== 'lineup') {
+        return;
+      }
+
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+
+      if (!isHorizontalSwipe(deltaX, deltaY, SWIPE_PREVIEW_PX)) {
+        clearPreview();
+        return;
+      }
+
+      options.onSwipePreview?.(resolveSwipeTarget(options.getDays(), options.getCurrentDay(), deltaX));
+    },
+    { passive: true },
+  );
+
+  element.addEventListener(
     'touchend',
     (event) => {
       if (!tracking) {
@@ -45,9 +97,11 @@ export function initDaySwipe(element: HTMLElement, options: DaySwipeOptions): vo
       tracking = false;
 
       if (options.isBlocked?.()) {
+        clearPreview();
         return;
       }
       if (options.getActiveView() !== 'lineup') {
+        clearPreview();
         return;
       }
 
@@ -55,26 +109,15 @@ export function initDaySwipe(element: HTMLElement, options: DaySwipeOptions): vo
       const deltaX = touch.clientX - startX;
       const deltaY = touch.clientY - startY;
 
-      if (Math.abs(deltaX) < SWIPE_THRESHOLD_PX) {
-        return;
-      }
-      if (Math.abs(deltaX) < Math.abs(deltaY) * SWIPE_DIRECTION_RATIO) {
+      clearPreview();
+
+      if (!isHorizontalSwipe(deltaX, deltaY, SWIPE_THRESHOLD_PX)) {
         return;
       }
 
-      const days = options.getDays();
-      const currentIndex = days.indexOf(options.getCurrentDay());
-      if (currentIndex === -1) {
-        return;
-      }
-
-      if (deltaX < 0 && currentIndex < days.length - 1) {
-        options.onSelectDay(days[currentIndex + 1]);
-        return;
-      }
-
-      if (deltaX > 0 && currentIndex > 0) {
-        options.onSelectDay(days[currentIndex - 1]);
+      const targetDay = resolveSwipeTarget(options.getDays(), options.getCurrentDay(), deltaX);
+      if (targetDay) {
+        options.onSelectDay(targetDay);
       }
     },
     { passive: true },
@@ -84,6 +127,7 @@ export function initDaySwipe(element: HTMLElement, options: DaySwipeOptions): vo
     'touchcancel',
     () => {
       tracking = false;
+      clearPreview();
     },
     { passive: true },
   );

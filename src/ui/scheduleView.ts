@@ -73,15 +73,16 @@ export function renderSchedule(input: RenderScheduleInput): void {
 
   const nowRows = input.pinNowPlaying ? rows.filter((row) => row.isNow) : [];
   const laterRows = input.pinNowPlaying ? rows.filter((row) => !row.isNow) : rows;
-  const renderRows = [...nowRows, ...laterRows];
 
-  renderRows.forEach((row, index) => {
-    if (input.pinNowPlaying && nowRows.length > 0 && index === nowRows.length) {
-      const divider = document.createElement('hr');
-      divider.className = 'divider-line';
-      input.container.appendChild(divider);
-    }
+  if (nowRows.length > 0) {
+    input.container.appendChild(renderPinnedNowBlock(nowRows, input));
 
+    const divider = document.createElement('hr');
+    divider.className = 'divider-line';
+    input.container.appendChild(divider);
+  }
+
+  laterRows.forEach((row) => {
     input.container.appendChild(renderCard(row, input));
   });
 
@@ -114,6 +115,65 @@ function toViewRows(items: ScheduleItem[], input: RenderScheduleInput): Schedule
       end,
     };
   });
+}
+
+function renderPinnedNowBlock(rows: ScheduleViewRow[], input: RenderScheduleInput): HTMLElement {
+  const block = document.createElement('section');
+  block.className = 'pinned-now-block';
+  block.setAttribute('aria-label', 'On stage now');
+
+  block.appendChild(textElement('div', 'On stage now', 'pinned-now-block__label'));
+
+  rows.forEach((row) => {
+    block.appendChild(renderCompactCard(row, input));
+  });
+
+  return block;
+}
+
+function renderCompactCard(row: ScheduleViewRow, input: RenderScheduleInput): HTMLElement {
+  const card = document.createElement('div');
+  card.className = 'card card--compact now-playing';
+  card.id = `schedule-item-${row.item.id}`;
+
+  if (row.hasOverlap) {
+    card.classList.add('has-collision');
+  }
+
+  const main = document.createElement('div');
+  main.className = 'compact-card__main';
+
+  const info = document.createElement('div');
+  info.className = 'compact-card__info';
+  info.append(
+    textElement('span', row.item.artist, 'compact-card__artist'),
+    textElement('span', row.item.time.label, 'compact-card__time'),
+    textElement('span', row.item.stage, 'compact-card__stage'),
+  );
+
+  if (row.hasOverlap) {
+    info.appendChild(renderCompactCollisionIndicator(row.overlaps));
+  }
+
+  main.append(info, renderToggleButton(row.item, input));
+  card.append(main, renderProgress(row, input.nowMs));
+
+  return card;
+}
+
+function renderCompactCollisionIndicator(partners: OverlapPartner[]): HTMLElement {
+  const tag = document.createElement('span');
+  tag.className = 'compact-card__collision';
+  tag.textContent = '!';
+  tag.setAttribute('role', 'img');
+  tag.setAttribute(
+    'aria-label',
+    partners.length === 1
+      ? `Collides with ${formatCollisionPartner(partners[0])}`
+      : `${partners.length} collisions`,
+  );
+  tag.title = partners.map(formatCollisionPartner).join('\n');
+  return tag;
 }
 
 function renderCard(row: ScheduleViewRow, input: RenderScheduleInput): HTMLElement {

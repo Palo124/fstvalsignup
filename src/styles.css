@@ -296,6 +296,11 @@ select[multiple] {
   color: var(--tab-active-bg);
 }
 
+#tabs button.day-tab.is-swipe-target {
+  border-bottom-color: #f1c40f;
+  color: #f1c40f;
+}
+
 #logo-title {
   position: relative;
   z-index: 30;
@@ -678,6 +683,27 @@ input:checked + .slider::before {
   text-align: center;
   color: var(--text);
   margin: 1em 0;
+  min-height: 40vh;
+}
+
+#schedule.is-day-loading {
+  min-height: 45vh;
+}
+
+#schedule.schedule-content-ready {
+  animation: schedule-content-in 0.18s ease-out;
+}
+
+@keyframes schedule-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .loading-spinner {
@@ -919,6 +945,113 @@ button.leave {
 .card.now-playing,
 .card.has-collision {
   padding-top: 1.7em;
+}
+
+.card.card--compact.now-playing,
+.card.card--compact.has-collision {
+  padding-top: 0.45rem;
+}
+
+.pinned-now-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.5rem 0.5rem;
+  border: 2px solid #f1c40f;
+  border-radius: 14px;
+  background: rgba(241, 196, 15, 0.06);
+}
+
+.pinned-now-block__label {
+  font-size: 0.68em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b8860b;
+  padding: 0 0.15rem;
+}
+
+body.dark .pinned-now-block__label {
+  color: #f1c40f;
+}
+
+.card.card--compact {
+  margin-bottom: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  border-width: 1px;
+}
+
+.card.card--compact.now-playing {
+  border: 1px solid var(--control-border) !important;
+}
+
+.card.card--compact.has-collision {
+  border-color: #e74c3c;
+}
+
+.compact-card__main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.compact-card__info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.compact-card__artist {
+  font-weight: 700;
+  font-size: 0.9em;
+  line-height: 1.25;
+}
+
+.compact-card__time {
+  font-size: 0.72em;
+  opacity: 0.85;
+}
+
+.compact-card__stage {
+  font-size: 0.68em;
+  padding: 0.12em 0.45em;
+  border: 1px solid var(--control-border);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.compact-card__collision {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25em;
+  height: 1.25em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid #e74c3c;
+  border-radius: 999px;
+  color: #e74c3c;
+}
+
+.card.card--compact .progress-container {
+  height: 4px;
+  margin: 0.35rem 0 0;
+}
+
+.card.card--compact button.join,
+.card.card--compact button.leave {
+  position: static;
+  padding: 0.2em 0.55em;
+  font-size: 0.78em;
+  border-width: 2px;
+  flex-shrink: 0;
 }
 
 .card.now-playing {
