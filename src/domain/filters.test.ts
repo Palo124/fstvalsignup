@@ -25,6 +25,7 @@ const emptyFilters = {
   joinedOnly: false,
   hasJoinersOnly: false,
   popularOnly: false,
+  query: '',
 };
 
 describe('applyScheduleFilters', () => {
@@ -61,6 +62,21 @@ describe('applyScheduleFilters', () => {
         '',
       ),
     ).toEqual([item(2, ['a', 'b', 'c'])]);
+  });
+
+  it('matches artist and stage text case-insensitively', () => {
+    const items = [
+      { ...item(1, []), artist: 'The Midnight', stage: 'LOVE' },
+      { ...item(2, []), artist: 'DJ Set', stage: 'FOREST' },
+    ];
+
+    expect(
+      applyScheduleFilters(items, { ...emptyFilters, query: 'midnight' }, new Map(), ''),
+    ).toEqual([{ ...item(1, []), artist: 'The Midnight', stage: 'LOVE' }]);
+
+    expect(
+      applyScheduleFilters(items, { ...emptyFilters, query: 'forest' }, new Map(), ''),
+    ).toEqual([{ ...item(2, []), artist: 'DJ Set', stage: 'FOREST' }]);
   });
 });
 

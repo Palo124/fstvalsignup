@@ -16,8 +16,10 @@ import {
   readShowDaySummary,
   type ControlsElements,
 } from './ui/controls';
+import { initDaySwipe } from './ui/daySwipe';
 import { getRequiredElement } from './ui/dom';
 import { hideDaySummary, renderDaySummary } from './ui/daySummaryView';
+import { initLineupSearch, readLineupSearchQuery, syncLineupSearchToolbar } from './ui/lineupSearch';
 import { exitMyScheduleFullscreenIfActive, renderMySchedule } from './ui/myScheduleView';
 import { renderSchedule, showError, showLoading } from './ui/scheduleView';
 import { renderTabs } from './ui/tabs';
@@ -27,7 +29,7 @@ import { initStickyNav } from './ui/stickyNav';
 import { applyTheme, bindSystemTheme } from './ui/theme';
 import { pollPendingNotifications, registerServiceWorker, syncPushSubscription } from './push/notifications';
 import { loadJson, storageKeys } from './state/storage';
-import type { ScheduleItem } from './types/schedule';
+import type { ScheduleFilters, ScheduleItem } from './types/schedule';
 
 const api = createLineupApi(config.backendUrl);
 initFooterSlogan();
@@ -35,6 +37,23 @@ initStickyNav();
 const elements = getElements();
 const initialControls = initControls(elements, renderCurrentView, applyTheme);
 const state = createAppState(initialControls.nickname);
+initLineupSearch(
+  {
+    toggle: elements.lineupSearchToggle,
+    row: elements.lineupSearchRow,
+    input: elements.lineupSearch,
+  },
+  renderCurrentView,
+);
+initDaySwipe(elements.schedule, {
+  getActiveView: () => currentView,
+  getDays: () => state.days,
+  getCurrentDay: () => state.currentDay,
+  onSelectDay: (day) => {
+    void selectDay(day);
+  },
+  isBlocked: () => elements.controlsPanel.open || elements.infoDialog.open,
+});
 let currentView: AppView = 'lineup';
 let focusLineupItemId: number | null = null;
 const pendingToggleIds = new Set<number>();
@@ -80,6 +99,7 @@ async function bootstrap(): Promise<void> {
     }
 
     renderDayTabs();
+    syncLineupToolbarVisibility();
     await loadSchedule(state.currentDay);
     prefetchSchedules(days, state.currentDay);
   } catch (error) {
@@ -188,7 +208,7 @@ function renderCurrentView(): void {
     renderDaySummary({
       container: elements.daySummaryBar,
       items: state.schedule,
-      filters: readFilters(elements),
+      filters: readLineupFilters(),
       overlaps,
       currentUser: state.nickname,
     });
@@ -197,7 +217,7 @@ function renderCurrentView(): void {
   renderSchedule({
     container: elements.schedule,
     items: state.schedule,
-    filters: readFilters(elements),
+    filters: readLineupFilters(),
     overlaps,
     currentUser: state.nickname,
     dayDate: calendarIsoDateForDayLabel(state.currentDay, config.dayToDate),
@@ -218,6 +238,7 @@ function navigateToLineupItem(item: ScheduleItem): void {
   if (currentView !== 'lineup') {
     currentView = 'lineup';
     renderDayTabs();
+    syncLineupToolbarVisibility();
   }
 
   renderCurrentView();
@@ -230,7 +251,26 @@ function selectView(view: AppView): void {
 
   currentView = view;
   renderDayTabs();
+  syncLineupToolbarVisibility();
   renderCurrentView();
+}
+
+function readLineupFilters(): ScheduleFilters {
+  return {
+    ...readFilters(elements),
+    query: readLineupSearchQuery(elements.lineupSearch),
+  };
+}
+
+function syncLineupToolbarVisibility(): void {
+  syncLineupSearchToolbar(
+    {
+      toggle: elements.lineupSearchToggle,
+      row: elements.lineupSearchRow,
+      input: elements.lineupSearch,
+    },
+    currentView === 'lineup',
+  );
 }
 
 async function toggleAttendance(item: ScheduleItem, _event: MouseEvent): Promise<void> {
@@ -295,7 +335,14 @@ function renderDayTabs(): void {
   );
 }
 
-function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLElement; daySummaryBar: HTMLElement } {
+function getElements(): ControlsElements & {
+  tabs: HTMLElement;
+  schedule: HTMLElement;
+  daySummaryBar: HTMLElement;
+  lineupSearch: HTMLInputElement;
+  lineupSearchRow: HTMLElement;
+  lineupSearchToggle: HTMLButtonElement;
+} {
   return {
     nickname: getRequiredElement('nickname', HTMLInputElement),
     attendees: getRequiredElement('filterSelect', HTMLSelectElement),
@@ -325,5 +372,8 @@ function getElements(): ControlsElements & { tabs: HTMLElement; schedule: HTMLEl
     tabs: getRequiredElement('tabs', HTMLElement),
     schedule: getRequiredElement('schedule', HTMLElement),
     daySummaryBar: getRequiredElement('day-summary', HTMLElement),
+    lineupSearch: getRequiredElement('lineup-search', HTMLInputElement),
+    lineupSearchRow: getRequiredElement('lineup-search-row', HTMLElement),
+    lineupSearchToggle: getRequiredElement('lineup-search-toggle', HTMLButtonElement),
   };
 }

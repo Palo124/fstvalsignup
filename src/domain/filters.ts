@@ -9,7 +9,16 @@ export function applyScheduleFilters(
 ): ScheduleItem[] {
   const normalizedUser = currentUser.trim();
 
+  const normalizedQuery = filters.query.trim().toLowerCase();
+
   const filtered = items.filter((item) => {
+    if (normalizedQuery) {
+      const haystack = `${item.artist} ${item.stage}`.toLowerCase();
+      if (!haystack.includes(normalizedQuery)) {
+        return false;
+      }
+    }
+
     if (filters.attendees.length > 0 && !filters.attendees.some((name) => item.attendees.includes(name))) {
       return false;
     }

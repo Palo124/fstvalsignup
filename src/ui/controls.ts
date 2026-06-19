@@ -181,6 +181,7 @@ export function readFilters(elements: ControlsElements): ScheduleFilters {
     joinedOnly: elements.joinedOnly.checked,
     hasJoinersOnly: elements.hasJoinersOnly.checked,
     popularOnly: elements.popularOnly.checked,
+    query: '',
   };
 
   saveJson(storageKeys.filterAttendees, filters.attendees);

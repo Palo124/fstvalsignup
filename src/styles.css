@@ -133,6 +133,69 @@ select[multiple] {
   display: block;
 }
 
+.lineup-search-row {
+  padding: 0.35rem 0 0.15rem;
+}
+
+.lineup-search-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 31;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.lineup-search-toggle:hover,
+.lineup-search-toggle.is-active,
+.lineup-search-toggle[aria-expanded='true'] {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+}
+
+.lineup-search-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+}
+
+.lineup-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55em 1em;
+  font-size: 0.92em;
+  font-family: inherit;
+  border: 2px solid var(--control-border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.lineup-search-input::placeholder {
+  color: var(--text);
+  opacity: 0.5;
+}
+
+.lineup-search-input:focus {
+  border-color: var(--tab-active-bg);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
+.lineup-search-input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
 #tabs .tab-toolbar {
   display: flex;
   align-items: center;

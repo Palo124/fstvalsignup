@@ -10,6 +10,7 @@ export const storageKeys = {
   filterJoined: 'filterJoined',
   filterHasJoiners: 'filterHasJoiners',
   filterPopular: 'filterPopular',
+  filterQuery: 'filterQuery',
   myScheduleJoinedOnly: 'myScheduleJoinedOnly',
   pinNowPlaying: 'pinNowPlaying',
   showDaySummary: 'showDaySummary',

@@ -39,4 +39,5 @@ export interface ScheduleFilters {
   joinedOnly: boolean;
   hasJoinersOnly: boolean;
   popularOnly: boolean;
+  query: string;
 }
